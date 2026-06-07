@@ -20,6 +20,21 @@ function send(res: ServerResponse, status: number, body: unknown) {
   res.end(JSON.stringify(body));
 }
 
+function safeKeyError(err: unknown): string {
+  const message = err instanceof Error ? err.message : String(err || '');
+  const lower = message.toLowerCase();
+  if (lower.includes('user_api_keys') || lower.includes('schema cache')) {
+    return 'Key storage table is missing. Run supabase/migrations/002_user_api_keys.sql in Supabase.';
+  }
+  if (lower.includes('encryption') || lower.includes('32 bytes')) {
+    return 'Key encryption is misconfigured. APP_ENCRYPTION_KEY must be 64 hex chars or valid base64.';
+  }
+  if (lower.includes('permission') || lower.includes('rls') || lower.includes('policy')) {
+    return 'Key storage permission failed. Check SUPABASE_SERVICE_ROLE_KEY in Vercel.';
+  }
+  return 'Could not update your key. Please try again.';
+}
+
 async function readJsonBody(req: IncomingMessage): Promise<any> {
   const anyReq = req as any;
   if (anyReq.body && typeof anyReq.body === 'object') return anyReq.body;
@@ -74,6 +89,6 @@ export default async function handler(
   } catch (err) {
     // Never log the key itself — only a generic message.
     console.error('key endpoint failed:', (err as Error).message);
-    return send(res, 500, { error: 'Could not update your key. Please try again.' });
+    return send(res, 500, { error: safeKeyError(err) });
   }
 }

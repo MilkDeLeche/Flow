@@ -14,6 +14,7 @@ export interface Course {
 }
 
 const LS_COURSES = 'flow_courses';
+const LS_IMAGE_COLUMN = 'flow_course_image_column';
 
 function lsGet<T>(key: string, fallback: T): T {
   try {
@@ -48,19 +49,40 @@ interface StoredCourse {
 
 export async function listCourses(): Promise<Course[]> {
   if (supabase) {
-    let { data, error } = await supabase
+    const imageColumnKnownMissing =
+      lsGet<'present' | 'missing' | null>(LS_IMAGE_COLUMN, null) === 'missing';
+    let { data, error } = imageColumnKnownMissing
+      ? await supabase
+          .from('courses')
+          .select('id,name,description,theme,created_at')
+          .order('created_at', { ascending: false })
+      : await supabase
       .from('courses')
       .select('id,name,description,theme,image_url,created_at')
       .order('created_at', { ascending: false });
+    let rows = data as
+      | Array<{
+          id: string;
+          name: string;
+          description: string | null;
+          theme: string | null;
+          image_url?: string | null;
+          created_at: string;
+        }>
+      | null;
+    if (data && imageColumnKnownMissing) {
+      rows = data.map((c) => ({ ...c, image_url: null }));
+    }
     if (error) {
+      lsSet(LS_IMAGE_COLUMN, 'missing');
       const fallback = await supabase
         .from('courses')
         .select('id,name,description,theme,created_at')
         .order('created_at', { ascending: false });
-      data = fallback.data?.map((c) => ({ ...c, image_url: null })) ?? null;
+      rows = fallback.data?.map((c) => ({ ...c, image_url: null })) ?? null;
       error = fallback.error;
     }
-    if (error || !data) return [];
+    if (error || !rows) return [];
 
     // Tally chapter counts from materials in one query.
     const counts = new Map<string, number>();
@@ -69,7 +91,7 @@ export async function listCourses(): Promise<Course[]> {
       if (m.course_id) counts.set(m.course_id, (counts.get(m.course_id) || 0) + 1);
     }
 
-    return data.map((c) => ({
+    return rows.map((c) => ({
       id: c.id,
       name: c.name,
       description: c.description ?? '',
@@ -106,7 +128,9 @@ export async function createCourse(input: {
       .insert({ name, description, theme, image_url: imageUrl ?? null })
       .select('id,created_at')
       .single();
+    if (!error) lsSet(LS_IMAGE_COLUMN, 'present');
     if (error) {
+      lsSet(LS_IMAGE_COLUMN, 'missing');
       const fallback = await supabase
         .from('courses')
         .insert({ name, description, theme })
@@ -153,7 +177,9 @@ export async function updateCourse(
     if (clean.theme !== undefined) dbClean.theme = clean.theme;
     if (clean.imageUrl !== undefined) dbClean.image_url = clean.imageUrl;
     const { error } = await supabase.from('courses').update(dbClean).eq('id', id);
+    if (!error && dbClean.image_url !== undefined) lsSet(LS_IMAGE_COLUMN, 'present');
     if (error && dbClean.image_url !== undefined) {
+      lsSet(LS_IMAGE_COLUMN, 'missing');
       const { image_url: _imageUrl, ...withoutImage } = dbClean;
       await supabase.from('courses').update(withoutImage).eq('id', id);
     }

@@ -59,8 +59,7 @@ export async function getStoredKey(
   userId: string,
   cfg: ServerSupabase
 ): Promise<{ provider: Provider; key: string; model: string } | null> {
-  if (!process.env.SUPABASE_SERVICE_ROLE_KEY || !process.env.APP_ENCRYPTION_KEY)
-    return null;
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) return null;
   try {
     const { data, error } = await admin(cfg)
       .from(TABLE)
