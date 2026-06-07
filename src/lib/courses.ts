@@ -8,6 +8,7 @@ export interface Course {
   name: string;
   description: string;
   theme: string;
+  imageUrl?: string;
   createdAt: string;
   chapterCount: number;
 }
@@ -41,15 +42,24 @@ interface StoredCourse {
   name: string;
   description: string;
   theme: string;
+  imageUrl?: string;
   createdAt: string;
 }
 
 export async function listCourses(): Promise<Course[]> {
   if (supabase) {
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from('courses')
-      .select('id,name,description,theme,created_at')
+      .select('id,name,description,theme,image_url,created_at')
       .order('created_at', { ascending: false });
+    if (error) {
+      const fallback = await supabase
+        .from('courses')
+        .select('id,name,description,theme,created_at')
+        .order('created_at', { ascending: false });
+      data = fallback.data?.map((c) => ({ ...c, image_url: null })) ?? null;
+      error = fallback.error;
+    }
     if (error || !data) return [];
 
     // Tally chapter counts from materials in one query.
@@ -64,6 +74,7 @@ export async function listCourses(): Promise<Course[]> {
       name: c.name,
       description: c.description ?? '',
       theme: c.theme ?? DEFAULT_THEME,
+      imageUrl: c.image_url ?? undefined,
       createdAt: c.created_at,
       chapterCount: counts.get(c.id) || 0,
     }));
@@ -82,24 +93,43 @@ export async function createCourse(input: {
   name: string;
   description?: string;
   theme?: string;
+  imageUrl?: string;
 }): Promise<Course> {
   const name = input.name.trim() || 'Untitled course';
   const description = (input.description ?? '').trim();
   const theme = input.theme ?? DEFAULT_THEME;
+  const imageUrl = input.imageUrl?.trim() || undefined;
 
   if (supabase) {
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from('courses')
-      .insert({ name, description, theme })
+      .insert({ name, description, theme, image_url: imageUrl ?? null })
       .select('id,created_at')
       .single();
+    if (error) {
+      const fallback = await supabase
+        .from('courses')
+        .insert({ name, description, theme })
+        .select('id,created_at')
+        .single();
+      data = fallback.data;
+      error = fallback.error;
+    }
     if (!error && data) {
-      return { id: data.id, name, description, theme, createdAt: data.created_at, chapterCount: 0 };
+      return {
+        id: data.id,
+        name,
+        description,
+        theme,
+        imageUrl,
+        createdAt: data.created_at,
+        chapterCount: 0,
+      };
     }
   }
 
   const id = uid();
-  const stored: StoredCourse = { id, name, description, theme, createdAt: nowIso() };
+  const stored: StoredCourse = { id, name, description, theme, imageUrl, createdAt: nowIso() };
   const list = lsGet<StoredCourse[]>(LS_COURSES, []);
   list.unshift(stored);
   lsSet(LS_COURSES, list);
@@ -108,21 +138,36 @@ export async function createCourse(input: {
 
 export async function updateCourse(
   id: string,
-  patch: { name?: string; description?: string; theme?: string }
+  patch: { name?: string; description?: string; theme?: string; imageUrl?: string | null }
 ): Promise<void> {
-  const clean: Record<string, string> = {};
+  const clean: Record<string, string | null> = {};
   if (patch.name !== undefined) clean.name = patch.name.trim() || 'Untitled course';
   if (patch.description !== undefined) clean.description = patch.description.trim();
   if (patch.theme !== undefined) clean.theme = patch.theme;
+  if (patch.imageUrl !== undefined) clean.imageUrl = patch.imageUrl?.trim() || null;
 
   if (supabase) {
-    await supabase.from('courses').update(clean).eq('id', id);
+    const dbClean: Record<string, string | null> = {};
+    if (clean.name !== undefined) dbClean.name = clean.name;
+    if (clean.description !== undefined) dbClean.description = clean.description;
+    if (clean.theme !== undefined) dbClean.theme = clean.theme;
+    if (clean.imageUrl !== undefined) dbClean.image_url = clean.imageUrl;
+    const { error } = await supabase.from('courses').update(dbClean).eq('id', id);
+    if (error && dbClean.image_url !== undefined) {
+      const { image_url: _imageUrl, ...withoutImage } = dbClean;
+      await supabase.from('courses').update(withoutImage).eq('id', id);
+    }
     return;
   }
   const list = lsGet<StoredCourse[]>(LS_COURSES, []);
   lsSet(
     LS_COURSES,
-    list.map((c) => (c.id === id ? { ...c, ...clean } : c))
+    list.map((c) => {
+      if (c.id !== id) return c;
+      const next = { ...c, ...clean };
+      if (next.imageUrl === null) delete next.imageUrl;
+      return next;
+    })
   );
 }
 

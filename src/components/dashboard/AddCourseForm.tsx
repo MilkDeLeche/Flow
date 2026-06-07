@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Upload, Sparkles, Loader2 } from 'lucide-react';
+import { Upload, Sparkles, Loader2, Image as ImageIcon, X } from 'lucide-react';
 import { THEMES, themeGradient } from '../../lib/themes';
 import { extractTextFromFile, readPdf } from '../../lib/extract';
 import { parseCourseFromInput } from '../../lib/parseCourse';
@@ -24,16 +24,27 @@ function fileToBase64(file: File): Promise<string> {
   });
 }
 
+function fileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(String(r.result));
+    r.onerror = () => reject(new Error('Could not read that image.'));
+    r.readAsDataURL(file);
+  });
+}
+
 /** Create a course — AI auto-fill from an upload (own key), or type it manually. */
 export default function AddCourseForm({ byokActive, onCreated }: Props) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [theme, setTheme] = useState(THEMES[0].key);
+  const [imageUrl, setImageUrl] = useState<string | undefined>();
   const [busy, setBusy] = useState(false);
   const [aiBusy, setAiBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const imageRef = useRef<HTMLInputElement>(null);
 
   const autofill = async (file: File) => {
     setError(null);
@@ -73,17 +84,32 @@ export default function AddCourseForm({ byokActive, onCreated }: Props) {
     autofill(file);
   };
 
+  const onImage = async (file?: File) => {
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      setError('Choose an image file for the course card.');
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      setError('Course images need to be under 2 MB.');
+      return;
+    }
+    setError(null);
+    setImageUrl(await fileToDataUrl(file));
+  };
+
   const save = async () => {
     if (!name.trim()) {
       setError('Give the course a name.');
       return;
     }
     setBusy(true);
-    const c = await createCourse({ name, description, theme });
+    const c = await createCourse({ name, description, theme, imageUrl });
     setBusy(false);
     setName('');
     setDescription('');
     setTheme(THEMES[0].key);
+    setImageUrl(undefined);
     setNote(null);
     onCreated(c);
   };
@@ -147,6 +173,44 @@ export default function AddCourseForm({ byokActive, onCreated }: Props) {
               />
             ))}
           </div>
+        </div>
+
+        <div>
+          <label className="mb-1.5 block text-[12px] text-[#646464]">Course image</label>
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={() => imageRef.current?.click()}
+              className="inline-flex items-center gap-2 rounded-full border-2 border-[#dde3dd] bg-white px-4 py-2 text-[13px] transition-colors hover:bg-[#eef1ed]"
+            >
+              <ImageIcon size={14} /> {imageUrl ? 'Change image' : 'Upload image'}
+            </button>
+            {imageUrl && (
+              <button
+                type="button"
+                onClick={() => setImageUrl(undefined)}
+                className="inline-flex items-center gap-1.5 rounded-full border-2 border-[#dde3dd] px-3 py-2 text-[13px] text-[#646464] transition-colors hover:bg-[#eef1ed] hover:text-[#2c2c2c]"
+              >
+                <X size={13} /> Remove
+              </button>
+            )}
+            <input
+              ref={imageRef}
+              type="file"
+              accept="image/png,image/jpeg,image/webp,image/gif,image/*"
+              className="hidden"
+              onChange={(e) => onImage(e.target.files?.[0])}
+            />
+          </div>
+          {imageUrl && (
+            <div className="mt-3 h-28 overflow-hidden rounded-xl border-2 border-[#dde3dd]">
+              <img
+                src={imageUrl}
+                alt=""
+                className="h-full w-full object-cover"
+              />
+            </div>
+          )}
         </div>
 
         {note && <p className="text-[13px] text-[#2c7a4b]">{note}</p>}

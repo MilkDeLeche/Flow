@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { LogOut, Pencil, Trash2, Check, X } from 'lucide-react';
+import { LogOut, Pencil, Trash2, Check, X, Image as ImageIcon } from 'lucide-react';
 import ApiKeyPanel from '../ApiKeyPanel';
 import AddCourseForm from './AddCourseForm';
 import { THEMES, themeGradient } from '../../lib/themes';
@@ -19,6 +19,15 @@ interface Props {
   refreshKey: number;
 }
 
+function fileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(String(r.result));
+    r.onerror = () => reject(new Error('Could not read that image.'));
+    r.readAsDataURL(file);
+  });
+}
+
 export default function Dashboard({
   byokActive,
   onKeyChange,
@@ -32,6 +41,8 @@ export default function Dashboard({
   const [draftName, setDraftName] = useState('');
   const [draftDesc, setDraftDesc] = useState('');
   const [draftTheme, setDraftTheme] = useState(THEMES[0].key);
+  const [draftImageUrl, setDraftImageUrl] = useState<string | undefined>();
+  const [editError, setEditError] = useState<string | null>(null);
 
   const reload = () => listCourses().then(setCourses);
 
@@ -44,13 +55,34 @@ export default function Dashboard({
     setDraftName(c.name);
     setDraftDesc(c.description);
     setDraftTheme(c.theme);
+    setDraftImageUrl(c.imageUrl);
+    setEditError(null);
   };
 
   const saveEdit = async (id: string) => {
-    await updateCourse(id, { name: draftName, description: draftDesc, theme: draftTheme });
+    await updateCourse(id, {
+      name: draftName,
+      description: draftDesc,
+      theme: draftTheme,
+      imageUrl: draftImageUrl ?? null,
+    });
     setEditingId(null);
     await reload();
     onChanged();
+  };
+
+  const onEditImage = async (file?: File) => {
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      setEditError('Choose an image file.');
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      setEditError('Course images need to be under 2 MB.');
+      return;
+    }
+    setEditError(null);
+    setDraftImageUrl(await fileToDataUrl(file));
   };
 
   const remove = async (c: Course) => {
@@ -116,6 +148,31 @@ export default function Dashboard({
                           />
                         ))}
                       </div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border-2 border-[#dde3dd] px-3 py-1.5 text-[13px] hover:bg-[#eef1ed]">
+                          <ImageIcon size={13} /> {draftImageUrl ? 'Change image' : 'Upload image'}
+                          <input
+                            type="file"
+                            accept="image/png,image/jpeg,image/webp,image/gif,image/*"
+                            className="hidden"
+                            onChange={(e) => onEditImage(e.target.files?.[0])}
+                          />
+                        </label>
+                        {draftImageUrl && (
+                          <button
+                            onClick={() => setDraftImageUrl(undefined)}
+                            className="inline-flex items-center gap-1.5 rounded-full border-2 border-[#dde3dd] px-3 py-1.5 text-[13px] hover:bg-[#eef1ed]"
+                          >
+                            <X size={13} /> Remove image
+                          </button>
+                        )}
+                      </div>
+                      {draftImageUrl && (
+                        <div className="h-24 overflow-hidden rounded-lg border border-[#e8e8e8]">
+                          <img src={draftImageUrl} alt="" className="h-full w-full object-cover" />
+                        </div>
+                      )}
+                      {editError && <p className="text-[12px] text-red-600">{editError}</p>}
                       <div className="flex gap-2 pt-1">
                         <button
                           onClick={() => saveEdit(c.id)}
@@ -133,10 +190,18 @@ export default function Dashboard({
                     </div>
                   ) : (
                     <div className="flex items-center gap-3">
-                      <span
-                        className="h-10 w-10 shrink-0 rounded-lg"
-                        style={{ backgroundImage: themeGradient(c.theme) }}
-                      />
+                      {c.imageUrl ? (
+                        <img
+                          src={c.imageUrl}
+                          alt=""
+                          className="h-10 w-10 shrink-0 rounded-lg object-cover"
+                        />
+                      ) : (
+                        <span
+                          className="h-10 w-10 shrink-0 rounded-lg"
+                          style={{ backgroundImage: themeGradient(c.theme) }}
+                        />
+                      )}
                       <button
                         onClick={() => onOpenCourse(c)}
                         className="min-w-0 flex-1 text-left"

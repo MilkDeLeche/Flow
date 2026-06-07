@@ -65,9 +65,17 @@ export default function CourseDetail({
       {/* Banner */}
       <div
         className="relative mb-6 overflow-hidden rounded-2xl p-6 text-white"
-        style={{ backgroundImage: themeGradient(course.theme) }}
+        style={
+          course.imageUrl
+            ? {
+                backgroundImage: `url(${course.imageUrl})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+              }
+            : { backgroundImage: themeGradient(course.theme) }
+        }
       >
-        <div className="absolute inset-0 bg-black/20" />
+        <div className="absolute inset-0 bg-black/35" />
         <div className="relative">
           <h1 className="font-mondwest text-[30px] leading-tight md:text-[40px]">
             {course.name}
