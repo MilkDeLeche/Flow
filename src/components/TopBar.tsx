@@ -57,7 +57,7 @@ export default function TopBar({
           onClick={() => onNavigate('home')}
           className="font-mondwest text-[28px] md:text-[32px] leading-none text-[#2c2c2c] shrink-0"
         >
-          Flow<span className="text-[#b4b8b4]">·quiz</span>
+          Flow
         </button>
 
         <nav className="flex items-center gap-1.5 md:gap-2">

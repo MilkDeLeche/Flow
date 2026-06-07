@@ -11,7 +11,7 @@ interface Props {
 }
 
 /**
- * FlowMate landing page — the public front door. The quiz app lives behind the
+ * Flow landing page — the public front door. The quiz app lives behind the
  * navbar's Log in / Sign up. This page is never replaced by the app; it stays.
  */
 export default function Landing({ onEnter }: Props) {
@@ -25,7 +25,7 @@ export default function Landing({ onEnter }: Props) {
         <FeaturesGrid />
         <CardsCarousel />
         <footer className="border-t border-[#e8e8e8] px-5 py-10 text-[13px] text-[#b4b8b4] lg:px-10">
-          Flow·quiz — turn any chapter, PDF, or slides into practice quizzes that
+          Flow — turn any chapter, PDF, or slides into practice quizzes that
           explain every wrong answer.
         </footer>
       </div>

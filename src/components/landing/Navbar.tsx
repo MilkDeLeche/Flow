@@ -12,7 +12,7 @@ export default function Navbar({ onEnter }: Props) {
     <header className="fixed left-0 right-0 top-0 z-40 border-b border-[#e8e8e8] bg-[#fefffc]/90 backdrop-blur-sm lg:left-[240px]">
       <div className="flex h-16 items-center justify-between px-5 lg:px-10">
         <a href="#home" className="font-mondwest text-[28px] leading-none lg:text-[32px]">
-          Flow<span className="text-[#b4b8b4]">·quiz</span>
+          Flow
         </a>
         <div className="flex items-center gap-2 lg:gap-4">
           <a

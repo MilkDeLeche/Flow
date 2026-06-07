@@ -28,7 +28,7 @@ const FEATURES: Feature[] = [
   },
   {
     title: 'Every wrong answer explained',
-    desc: 'Miss one and Flow·quiz tells you exactly why it’s wrong (and why the right one is right), so you fix the gap.',
+    desc: 'Miss one and Flow tells you exactly why it’s wrong (and why the right one is right), so you fix the gap.',
     icons: [Lightbulb],
   },
   {
