@@ -7,6 +7,7 @@ import {
   bearerToken,
   emailAllowed,
   getServerSupabase,
+  validateSupabaseConfig,
   verifyUser,
 } from './_auth';
 import { getStoredKeyStatus, setStoredKey, deleteStoredKey } from './_keys';
@@ -34,8 +35,23 @@ function safeKeyError(err: unknown): string {
   if (lower.includes('encryption') || lower.includes('32 bytes')) {
     return 'Key encryption is misconfigured. APP_ENCRYPTION_KEY must be 64 hex chars or valid base64.';
   }
-  if (lower.includes('permission') || lower.includes('rls') || lower.includes('policy')) {
+  if (
+    lower.includes('permission') ||
+    lower.includes('rls') ||
+    lower.includes('policy') ||
+    lower.includes('invalid api key') ||
+    lower.includes('jwt')
+  ) {
     return 'Key storage permission failed. Check SUPABASE_SERVICE_ROLE_KEY in Vercel.';
+  }
+  if (
+    lower.includes('fetch failed') ||
+    lower.includes('failed to fetch') ||
+    lower.includes('invalid url') ||
+    lower.includes('enotfound') ||
+    lower.includes('supabase_url')
+  ) {
+    return 'Supabase URL is misconfigured. In Vercel, set SUPABASE_URL and VITE_SUPABASE_URL to https://YOUR-PROJECT.supabase.co, then redeploy.';
   }
   return 'Could not update your key. Please try again.';
 }
@@ -55,6 +71,8 @@ export default async function handler(
 ) {
   const sb = getServerSupabase();
   if (!sb) return send(res, 503, { error: 'Account key storage requires Supabase.' });
+  const configError = validateSupabaseConfig(sb);
+  if (configError) return send(res, 503, { error: configError });
 
   // --- Auth + allowlist (same gate as the quiz endpoint) ---
   const token = bearerToken(req.headers['authorization'] as string | undefined);

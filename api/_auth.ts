@@ -8,11 +8,26 @@ export interface ServerSupabase {
 }
 
 export function getServerSupabase(): ServerSupabase | null {
-  const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+  const rawUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
   const anonKey =
     process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
-  if (!url || !anonKey) return null;
+  if (!rawUrl || !anonKey) return null;
+  const url = rawUrl.replace(/\/+$/, '');
   return { url, anonKey };
+}
+
+export function validateSupabaseConfig(cfg: ServerSupabase): string | null {
+  try {
+    const parsed = new URL(cfg.url);
+    if (parsed.protocol !== 'https:') return 'SUPABASE_URL must start with https://.';
+    if (!parsed.hostname.endsWith('.supabase.co'))
+      return 'SUPABASE_URL should look like https://YOUR-PROJECT.supabase.co.';
+  } catch {
+    return 'SUPABASE_URL is not a valid URL.';
+  }
+  if (!cfg.anonKey.startsWith('eyJ'))
+    return 'SUPABASE_ANON_KEY/VITE_SUPABASE_ANON_KEY does not look like a Supabase anon JWT.';
+  return null;
 }
 
 export interface AuthedUser {

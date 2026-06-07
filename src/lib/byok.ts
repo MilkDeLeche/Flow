@@ -118,7 +118,16 @@ export async function saveKey(
         body: JSON.stringify({ provider, key: key.trim(), model }),
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) return { ok: false, error: data.error || 'Could not save your key.' };
+      if (!res.ok) {
+        const setupHint =
+          res.status >= 500
+            ? ' Check your Vercel Supabase environment variables and run the Supabase key-storage SQL migration.'
+            : '';
+        return {
+          ok: false,
+          error: data.error ? `${data.error}${setupHint}` : `Could not save your key.${setupHint}`,
+        };
+      }
       return { ok: true, status: data as KeyStatus };
     } catch {
       return { ok: false, error: 'Network error while saving your key.' };
