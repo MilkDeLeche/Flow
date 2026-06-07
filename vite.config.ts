@@ -115,6 +115,59 @@ function devApiPlugin(apiKey: string): Plugin {
   };
 }
 
+// Dev-only middleware for POST /api/parse-course (AI course auto-fill). Mirrors
+// the Vercel function; uses the inline BYOK key sent from the browser in dev.
+function devParseCoursePlugin(): Plugin {
+  return {
+    name: 'dev-parse-course-api',
+    apply: 'serve',
+    configureServer(server) {
+      server.middlewares.use('/api/parse-course', async (req, res) => {
+        const json = (status: number, body: unknown) => {
+          res.statusCode = status;
+          res.setHeader('content-type', 'application/json');
+          res.end(JSON.stringify(body));
+        };
+        if (req.method !== 'POST') return json(405, { error: 'Method not allowed' });
+        try {
+          const { getServerSupabase, verifyUser, bearerToken } = await import('./api/_auth');
+          const sb = getServerSupabase();
+          if (sb) {
+            const token = bearerToken(req.headers['authorization'] as string | undefined);
+            const user = token ? await verifyUser(token, sb) : null;
+            if (!user) return json(401, { error: 'Not authorized. Please sign in.' });
+          }
+          const chunks: Buffer[] = [];
+          for await (const c of req) chunks.push(c as Buffer);
+          const body = JSON.parse(Buffer.concat(chunks).toString('utf8') || '{}');
+
+          const { isProvider, keyLooksValid, resolveModel } = await import('./api/_generateQuiz');
+          const rawKey = typeof body.apiKey === 'string' ? body.apiKey.trim() : '';
+          const provider = isProvider(body.provider) ? body.provider : 'anthropic';
+          if (!rawKey || !keyLooksValid(provider, rawKey))
+            return json(403, {
+              error: 'AI auto-fill needs your own API key. Add one, or type the details manually.',
+            });
+
+          const { parseCourse } = await import('./api/_parseCourse');
+          const meta = await parseCourse({
+            provider,
+            apiKey: rawKey,
+            model: resolveModel(provider, typeof body.model === 'string' ? body.model : ''),
+            text: typeof body.text === 'string' ? body.text : undefined,
+            pdfBase64: provider === 'anthropic' ? body.pdfBase64 : undefined,
+            imageBase64: provider === 'anthropic' ? body.imageBase64 : undefined,
+            imageMediaType: body.imageMediaType,
+          });
+          return json(200, meta);
+        } catch (err) {
+          json(500, { error: err instanceof Error ? err.message : 'Auto-fill failed.' });
+        }
+      });
+    },
+  };
+}
+
 export default defineConfig(({ mode }) => {
   // loadEnv with '' prefix loads ALL vars (incl. non-VITE) from .env files.
   const env = loadEnv(mode, process.cwd(), '');
@@ -125,6 +178,6 @@ export default defineConfig(({ mode }) => {
     env.SUPABASE_ANON_KEY || env.VITE_SUPABASE_ANON_KEY || '';
   process.env.ANTHROPIC_MODEL ||= env.ANTHROPIC_MODEL || '';
   return {
-    plugins: [react(), devApiPlugin(env.ANTHROPIC_API_KEY || '')],
+    plugins: [react(), devApiPlugin(env.ANTHROPIC_API_KEY || ''), devParseCoursePlugin()],
   };
 });

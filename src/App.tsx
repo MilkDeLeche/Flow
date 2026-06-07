@@ -1,20 +1,22 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Loader2, ArrowLeft } from 'lucide-react';
 import TopBar from './components/TopBar';
 import Uploader from './components/Uploader';
-import JumpBackIn from './components/JumpBackIn';
-import ApiKeyPanel from './components/ApiKeyPanel';
 import QuizRunner from './components/QuizRunner';
 import Results from './components/Results';
 import History from './components/History';
 import Review from './components/Review';
 import Login from './components/Login';
 import Landing from './components/landing/Landing';
+import CoursesHome from './components/dashboard/CoursesHome';
+import Dashboard from './components/dashboard/Dashboard';
+import CourseDetail from './components/dashboard/CourseDetail';
 import { generateQuiz } from './lib/api';
 import { saveAttempt } from './lib/history';
 import { supabase } from './lib/supabase';
 import { loadKeyStatus } from './lib/byok';
 import { useAuth } from './lib/useAuth';
+import type { Course } from './lib/courses';
 import {
   addToBank,
   countMissed,
@@ -34,7 +36,16 @@ import type {
   RoundSize,
 } from './lib/types';
 
-type View = 'home' | 'loading' | 'quiz' | 'results' | 'history' | 'review';
+type View =
+  | 'home'
+  | 'dashboard'
+  | 'course'
+  | 'upload'
+  | 'loading'
+  | 'quiz'
+  | 'results'
+  | 'history'
+  | 'review';
 
 const USER_KEY = 'flow_user';
 
@@ -55,6 +66,11 @@ export default function App() {
 
   const [view, setView] = useState<View>('home');
   const [localName, setLocalName] = useState('Student');
+
+  // Courses
+  const [currentCourse, setCurrentCourse] = useState<Course | null>(null);
+  const [uploadCourseId, setUploadCourseId] = useState<string | null>(null);
+  const [roundCourse, setRoundCourse] = useState<Course | null>(null);
 
   // Active material
   const [title, setTitle] = useState('');
@@ -77,9 +93,7 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [byokActive, setByokActive] = useState(false);
 
-  const userName = authRequired
-    ? session?.user.email ?? 'Student'
-    : localName;
+  const userName = authRequired ? session?.user.email ?? 'Student' : localName;
 
   useEffect(() => {
     const saved = localStorage.getItem(USER_KEY);
@@ -88,9 +102,13 @@ export default function App() {
 
   // Whether the user has their own key configured (stored on their account in
   // prod, or in this browser in dev). Re-checked when the session changes.
-  useEffect(() => {
+  const reloadKeyStatus = useCallback(() => {
     loadKeyStatus().then((s) => setByokActive(s.configured));
-  }, [session]);
+  }, []);
+
+  useEffect(() => {
+    reloadKeyStatus();
+  }, [reloadKeyStatus, session]);
 
   const refreshMissed = useCallback(() => {
     countMissed(userName).then(setMissedCount);
@@ -122,8 +140,6 @@ export default function App() {
       const bank = await listBank(mId);
       let pool = bank;
       if (pdf && bank.length === 0) {
-        // Figure/diagram PDF: build the full bank once via vision, so the PDF
-        // is sent to the model a single time, then everything is cached.
         const fresh = await generateQuiz(mat, 50, [], pdf);
         await addToBank(mId, mTitle, fresh);
         pool = fresh;
@@ -154,17 +170,25 @@ export default function App() {
     setMaterial(args.material);
     setMode(args.mode);
     setPdfBase64(args.pdfBase64);
-    const id = await recordMaterial(args.title, args.material, args.sourceType);
+    // Attach to a course when adding a chapter from inside one.
+    setRoundCourse(uploadCourseId ? currentCourse : null);
+    const id = await recordMaterial(
+      args.title,
+      args.material,
+      args.sourceType,
+      uploadCourseId ?? undefined
+    );
     setMaterialId(id);
     await runRound(args.roundSize, args.material, id, args.title, args.pdfBase64);
   };
 
-  const handleResume = async (m: RecentMaterial) => {
+  const handleResume = async (m: RecentMaterial, fromCourse: Course | null = null) => {
     setTitle(m.title);
     setMaterial(m.content);
     setMaterialId(m.id);
     setMode('practice');
-    setPdfBase64(undefined); // figure-PDF banks are already built; serve cache
+    setPdfBase64(undefined);
+    setRoundCourse(fromCourse);
     await runRound(10, m.content, m.id, m.title);
   };
 
@@ -200,12 +224,9 @@ export default function App() {
         score,
         total: questions.length,
         userName,
+        mode,
       });
-      setLocalMaterialScore(materialId, {
-        score,
-        total: questions.length,
-        roundSize,
-      });
+      setLocalMaterialScore(materialId, { score, total: questions.length, roundSize });
     }
     setRefreshKey((k) => k + 1);
     setView('results');
@@ -213,13 +234,21 @@ export default function App() {
 
   const retake = async () => {
     if (isReview) {
-      // Drill whatever mistakes remain.
       const remaining = await listMissed(userName);
       if (remaining.length) startReview(remaining.slice(0, 30));
       else setView('review');
     } else {
       await runRound(roundSize, material, materialId, title);
     }
+  };
+
+  // Where to land after a quiz: back to its course, else the courses home.
+  const afterQuizView = (): View => (isReview ? 'review' : roundCourse ? 'course' : 'home');
+
+  const openCourse = (c: Course) => {
+    setCurrentCourse(c);
+    setError(null);
+    setView('course');
   };
 
   // ---- Landing page (public front door) ----
@@ -238,10 +267,13 @@ export default function App() {
   if (authRequired && !session)
     return <Login onBack={() => setScreen('landing')} />;
 
+  const topView: 'home' | 'history' | 'review' | 'dashboard' =
+    view === 'history' || view === 'review' || view === 'dashboard' ? view : 'home';
+
   return (
     <div className="min-h-screen bg-[#fefffc] text-[#2c2c2c]">
       <TopBar
-        view={view === 'history' || view === 'review' ? view : 'home'}
+        view={topView}
         onNavigate={(v) => {
           setError(null);
           setView(v);
@@ -250,20 +282,62 @@ export default function App() {
         authed={authRequired && !!session}
         missedCount={missedCount}
         onChangeUser={changeUser}
-        onSignOut={() => supabase?.auth.signOut()}
       />
 
       <main>
         {view === 'home' && (
-          <>
-            <JumpBackIn onResume={handleResume} refreshKey={refreshKey} />
+          <CoursesHome
+            refreshKey={refreshKey}
+            onOpenCourse={openCourse}
+            onNewCourse={() => setView('dashboard')}
+            onQuickQuiz={() => {
+              setUploadCourseId(null);
+              setView('upload');
+            }}
+            onResume={(m) => handleResume(m, null)}
+          />
+        )}
+
+        {view === 'dashboard' && (
+          <Dashboard
+            byokActive={byokActive}
+            onKeyChange={reloadKeyStatus}
+            onSignOut={() => supabase?.auth.signOut()}
+            onOpenCourse={openCourse}
+            onChanged={() => setRefreshKey((k) => k + 1)}
+            refreshKey={refreshKey}
+          />
+        )}
+
+        {view === 'course' && currentCourse && (
+          <CourseDetail
+            course={currentCourse}
+            refreshKey={refreshKey}
+            onBack={() => setView('home')}
+            onAddChapter={() => {
+              setUploadCourseId(currentCourse.id);
+              setView('upload');
+            }}
+            onStudy={(m) => handleResume(m, currentCourse)}
+            onReview={() => setView('review')}
+          />
+        )}
+
+        {view === 'upload' && (
+          <div className="max-w-[760px] mx-auto px-5 md:px-8 pt-6">
+            <button
+              onClick={() => setView(uploadCourseId ? 'course' : 'home')}
+              className="inline-flex items-center gap-1.5 text-[14px] text-[#646464] transition-colors hover:text-[#2c2c2c]"
+            >
+              <ArrowLeft size={15} /> {uploadCourseId ? 'Back to course' : 'Back'}
+            </button>
+            {uploadCourseId && currentCourse && (
+              <p className="mt-3 text-[13px] text-[#646464]">
+                Adding a chapter to <b className="text-[#2c2c2c]">{currentCourse.name}</b>
+              </p>
+            )}
             <Uploader onStart={handleStart} allowUpload={byokActive} />
-            <ApiKeyPanel
-              onChange={() =>
-                loadKeyStatus().then((s) => setByokActive(s.configured))
-              }
-            />
-          </>
+          </div>
         )}
 
         {view === 'loading' && (
@@ -283,7 +357,7 @@ export default function App() {
                     Try again
                   </button>
                   <button
-                    onClick={() => setView('home')}
+                    onClick={() => setView(roundCourse ? 'course' : 'home')}
                     className="px-5 py-3 text-[15px] bg-white border-2 border-[#dde3dd] rounded-full hover:bg-[#eef1ed] transition-colors"
                   >
                     Back
@@ -293,9 +367,7 @@ export default function App() {
             ) : (
               <div className="flex flex-col items-center gap-4 text-[#646464]">
                 <Loader2 size={28} className="animate-spin" />
-                <p className="text-[16px]">
-                  Building your {roundSize}-question quiz…
-                </p>
+                <p className="text-[16px]">Building your {roundSize}-question quiz…</p>
                 <p className="text-[13px] text-[#b4b8b4]">
                   Reading the material and writing explanations. Future rounds of
                   this material are served from the cache — no waiting.
@@ -311,7 +383,7 @@ export default function App() {
             questions={questions}
             mode={mode}
             onFinish={handleFinish}
-            onQuit={() => setView(isReview ? 'review' : 'home')}
+            onQuit={() => setView(afterQuizView())}
           />
         )}
 
@@ -322,13 +394,14 @@ export default function App() {
             answers={answers}
             roundSize={roundSize}
             isReview={isReview}
-            onRound={(size) =>
-              runRound(size, material, materialId, title)
-            }
+            onRound={(size) => runRound(size, material, materialId, title)}
             onRetake={retake}
             onNewMaterial={() => {
               if (isReview) {
                 setView('review');
+              } else if (roundCourse) {
+                setCurrentCourse(roundCourse);
+                setView('course');
               } else {
                 setMaterial('');
                 setTitle('');
@@ -341,11 +414,7 @@ export default function App() {
         {view === 'history' && <History />}
 
         {view === 'review' && (
-          <Review
-            userName={userName}
-            refreshKey={refreshKey}
-            onDrill={startReview}
-          />
+          <Review userName={userName} refreshKey={refreshKey} onDrill={startReview} />
         )}
       </main>
     </div>
