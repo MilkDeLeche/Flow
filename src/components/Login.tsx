@@ -1,8 +1,13 @@
 import { useState } from 'react';
-import { Loader2, Lock } from 'lucide-react';
+import { Loader2, Lock, ArrowLeft } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
-export default function Login() {
+interface LoginProps {
+  /** Return to the public landing page without signing in. */
+  onBack?: () => void;
+}
+
+export default function Login({ onBack }: LoginProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
@@ -24,9 +29,17 @@ export default function Login() {
   return (
     <div className="min-h-screen bg-[#fefffc] text-[#2c2c2c] flex items-center justify-center px-5">
       <div className="w-full max-w-[400px]">
+        {onBack && (
+          <button
+            onClick={onBack}
+            className="mb-6 inline-flex items-center gap-1.5 text-[14px] text-[#646464] transition-colors hover:text-[#2c2c2c]"
+          >
+            <ArrowLeft size={15} /> Back
+          </button>
+        )}
         <div className="text-center mb-8">
           <h1 className="font-mondwest text-[44px] leading-none mb-2">
-            Flow<span className="text-[#b4b8b4]">·quiz</span>
+            Flow
           </h1>
           <p className="text-[15px] text-[#646464]">Sign in to keep studying.</p>
         </div>
@@ -82,10 +95,6 @@ export default function Login() {
           </button>
         </form>
 
-        <p className="text-[12px] text-[#b4b8b4] text-center mt-4 leading-relaxed">
-          Accounts are created by the owner in Supabase. Public sign-ups are
-          disabled.
-        </p>
       </div>
     </div>
   );

@@ -50,7 +50,7 @@ function shuffle<T>(arr: T[]): T[] {
 export default function App() {
   const { session, loading: authLoading, authRequired } = useAuth();
 
-  // Top-level screen: the FlowMate landing page (front door) vs. the quiz app.
+  // Top-level screen: the Flow landing page (front door) vs. the quiz app.
   const [screen, setScreen] = useState<'landing' | 'app'>('landing');
 
   const [view, setView] = useState<View>('home');
@@ -235,7 +235,8 @@ export default function App() {
       </div>
     );
   }
-  if (authRequired && !session) return <Login />;
+  if (authRequired && !session)
+    return <Login onBack={() => setScreen('landing')} />;
 
   return (
     <div className="min-h-screen bg-[#fefffc] text-[#2c2c2c]">

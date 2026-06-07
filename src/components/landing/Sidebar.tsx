@@ -31,7 +31,7 @@ export default function Sidebar() {
   return (
     <aside className="hidden lg:flex fixed left-0 top-0 z-30 h-screen w-[240px] flex-col border-r-2 border-[#dde3dd] bg-[#fefffc] px-5 py-6">
       <a href="#home" className="mb-8 font-mondwest text-[24px] leading-none">
-        Flow<span className="text-[#b4b8b4]">·quiz</span>
+        Flow
       </a>
       <nav className="flex flex-col gap-1">
         {NAV.map((n) => (
