@@ -1,11 +1,19 @@
 // AES-256-GCM encryption for secrets at rest (users' BYOK API keys).
 // The key comes from APP_ENCRYPTION_KEY (32 bytes, as 64 hex chars or base64).
 // Generate one with:  node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+// If APP_ENCRYPTION_KEY is missing, derive a stable key from the server-only
+// Supabase service role key so BYOK storage still works without exposing
+// plaintext keys to the browser.
 import crypto from 'crypto';
 
 function getKey(): Buffer {
   const raw = process.env.APP_ENCRYPTION_KEY || '';
-  if (!raw) throw new Error('APP_ENCRYPTION_KEY is not set.');
+  if (!raw) {
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+    if (!serviceRoleKey)
+      throw new Error('APP_ENCRYPTION_KEY or SUPABASE_SERVICE_ROLE_KEY is required.');
+    return crypto.createHash('sha256').update(`flow-byok:${serviceRoleKey}`).digest();
+  }
   const buf = /^[0-9a-fA-F]{64}$/.test(raw)
     ? Buffer.from(raw, 'hex')
     : Buffer.from(raw, 'base64');

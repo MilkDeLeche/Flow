@@ -52,10 +52,6 @@ export default async function handler(
     }
 
     if (req.method === 'POST') {
-      if (!process.env.APP_ENCRYPTION_KEY)
-        return send(res, 503, {
-          error: 'Key storage is not configured (missing APP_ENCRYPTION_KEY).',
-        });
       const body = await readJsonBody(req);
       const provider = body.provider;
       const key = typeof body.key === 'string' ? body.key.trim() : '';
