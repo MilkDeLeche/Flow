@@ -1,0 +1,333 @@
+import { useCallback, useEffect, useState } from 'react';
+import { Loader2 } from 'lucide-react';
+import TopBar from './components/TopBar';
+import Uploader from './components/Uploader';
+import JumpBackIn from './components/JumpBackIn';
+import ApiKeyPanel from './components/ApiKeyPanel';
+import QuizRunner from './components/QuizRunner';
+import Results from './components/Results';
+import History from './components/History';
+import Review from './components/Review';
+import Login from './components/Login';
+import { generateQuiz } from './lib/api';
+import { saveAttempt } from './lib/history';
+import { supabase } from './lib/supabase';
+import { hasByok } from './lib/byok';
+import { useAuth } from './lib/useAuth';
+import {
+  addToBank,
+  countMissed,
+  gradeReviewResults,
+  listBank,
+  listMissed,
+  recordMaterial,
+  recordRoundResults,
+  setLocalMaterialScore,
+  type MissedQuestion,
+  type RecentMaterial,
+} from './lib/store';
+import type {
+  AnswerRecord,
+  QuizMode,
+  QuizQuestion,
+  RoundSize,
+} from './lib/types';
+
+type View = 'home' | 'loading' | 'quiz' | 'results' | 'history' | 'review';
+
+const USER_KEY = 'flow_user';
+
+function shuffle<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+export default function App() {
+  const { session, loading: authLoading, authRequired } = useAuth();
+
+  const [view, setView] = useState<View>('home');
+  const [localName, setLocalName] = useState('Student');
+
+  // Active material
+  const [title, setTitle] = useState('');
+  const [material, setMaterial] = useState('');
+  const [materialId, setMaterialId] = useState<string>('');
+  const [pdfBase64, setPdfBase64] = useState<string | undefined>();
+
+  // Active round / session
+  const [questions, setQuestions] = useState<QuizQuestion[]>([]);
+  const [roundSize, setRoundSize] = useState<RoundSize>(10);
+  const [mode, setMode] = useState<QuizMode>('practice');
+  const [answers, setAnswers] = useState<AnswerRecord[]>([]);
+
+  // Review session
+  const [isReview, setIsReview] = useState(false);
+  const [reviewMissed, setReviewMissed] = useState<MissedQuestion[]>([]);
+
+  const [missedCount, setMissedCount] = useState(0);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [error, setError] = useState<string | null>(null);
+  const [byokActive, setByokActive] = useState(hasByok());
+
+  const userName = authRequired
+    ? session?.user.email ?? 'Student'
+    : localName;
+
+  useEffect(() => {
+    const saved = localStorage.getItem(USER_KEY);
+    if (saved) setLocalName(saved);
+  }, []);
+
+  const refreshMissed = useCallback(() => {
+    countMissed(userName).then(setMissedCount);
+  }, [userName]);
+
+  useEffect(() => {
+    refreshMissed();
+  }, [refreshMissed, refreshKey]);
+
+  const changeUser = (name: string) => {
+    setLocalName(name);
+    localStorage.setItem(USER_KEY, name);
+  };
+
+  // Build a round, serving from the cached question bank and only calling the
+  // API to top up when the bank doesn't have enough questions yet.
+  const runRound = async (
+    size: RoundSize,
+    mat: string,
+    mId: string,
+    mTitle: string,
+    pdf?: string
+  ) => {
+    setRoundSize(size);
+    setIsReview(false);
+    setError(null);
+    setView('loading');
+    try {
+      const bank = await listBank(mId);
+      let pool = bank;
+      if (pdf && bank.length === 0) {
+        // Figure/diagram PDF: build the full bank once via vision, so the PDF
+        // is sent to the model a single time, then everything is cached.
+        const fresh = await generateQuiz(mat, 50, [], pdf);
+        await addToBank(mId, mTitle, fresh);
+        pool = fresh;
+      } else if (bank.length < size) {
+        const need = size - bank.length;
+        const avoid = bank.map((q) => q.question).slice(0, 60);
+        const fresh = await generateQuiz(mat, need, avoid);
+        await addToBank(mId, mTitle, fresh);
+        pool = [...bank, ...fresh];
+      }
+      setQuestions(shuffle(pool).slice(0, size));
+      setAnswers([]);
+      setView('quiz');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Something went wrong.');
+    }
+  };
+
+  const handleStart = async (args: {
+    title: string;
+    material: string;
+    sourceType: string;
+    roundSize: RoundSize;
+    mode: QuizMode;
+    pdfBase64?: string;
+  }) => {
+    setTitle(args.title);
+    setMaterial(args.material);
+    setMode(args.mode);
+    setPdfBase64(args.pdfBase64);
+    const id = await recordMaterial(args.title, args.material, args.sourceType);
+    setMaterialId(id);
+    await runRound(args.roundSize, args.material, id, args.title, args.pdfBase64);
+  };
+
+  const handleResume = async (m: RecentMaterial) => {
+    setTitle(m.title);
+    setMaterial(m.content);
+    setMaterialId(m.id);
+    setMode('practice');
+    setPdfBase64(undefined); // figure-PDF banks are already built; serve cache
+    await runRound(10, m.content, m.id, m.title);
+  };
+
+  const startReview = (missed: MissedQuestion[]) => {
+    if (!missed.length) return;
+    setReviewMissed(missed);
+    setIsReview(true);
+    setMode('practice');
+    setTitle('Review · your mistakes');
+    setQuestions(missed.map((m) => m.question));
+    setAnswers([]);
+    setView('quiz');
+  };
+
+  const handleFinish = async (finalAnswers: AnswerRecord[]) => {
+    setAnswers(finalAnswers);
+    const score = finalAnswers.filter((a) => a.correct).length;
+
+    if (isReview) {
+      await gradeReviewResults(userName, reviewMissed, finalAnswers);
+    } else {
+      await recordRoundResults({
+        materialId,
+        materialTitle: title,
+        userName,
+        questions,
+        answers: finalAnswers,
+      });
+      saveAttempt({
+        materialId: materialId || null,
+        materialTitle: title,
+        roundSize,
+        score,
+        total: questions.length,
+        userName,
+      });
+      setLocalMaterialScore(materialId, {
+        score,
+        total: questions.length,
+        roundSize,
+      });
+    }
+    setRefreshKey((k) => k + 1);
+    setView('results');
+  };
+
+  const retake = async () => {
+    if (isReview) {
+      // Drill whatever mistakes remain.
+      const remaining = await listMissed(userName);
+      if (remaining.length) startReview(remaining.slice(0, 30));
+      else setView('review');
+    } else {
+      await runRound(roundSize, material, materialId, title);
+    }
+  };
+
+  // ---- Auth gate ----
+  if (authRequired && authLoading) {
+    return (
+      <div className="min-h-screen bg-[#fefffc] flex items-center justify-center">
+        <Loader2 size={28} className="animate-spin text-[#646464]" />
+      </div>
+    );
+  }
+  if (authRequired && !session) return <Login />;
+
+  return (
+    <div className="min-h-screen bg-[#fefffc] text-[#2c2c2c]">
+      <TopBar
+        view={view === 'history' || view === 'review' ? view : 'home'}
+        onNavigate={(v) => {
+          setError(null);
+          setView(v);
+        }}
+        userName={userName}
+        authed={authRequired && !!session}
+        missedCount={missedCount}
+        onChangeUser={changeUser}
+        onSignOut={() => supabase?.auth.signOut()}
+      />
+
+      <main>
+        {view === 'home' && (
+          <>
+            <JumpBackIn onResume={handleResume} refreshKey={refreshKey} />
+            <Uploader onStart={handleStart} allowUpload={byokActive} />
+            <ApiKeyPanel onChange={() => setByokActive(hasByok())} />
+          </>
+        )}
+
+        {view === 'loading' && (
+          <div className="max-w-[640px] mx-auto px-5 pt-24 text-center">
+            {error ? (
+              <>
+                <p className="text-[16px] text-red-600 bg-red-50 border border-red-200 rounded-xl px-5 py-4 mb-6">
+                  {error}
+                </p>
+                <div className="flex items-center justify-center gap-3">
+                  <button
+                    onClick={() =>
+                      runRound(roundSize, material, materialId, title, pdfBase64)
+                    }
+                    className="px-5 py-3 text-[15px] bg-black text-white rounded-full hover:bg-[#2c2c2c] transition-colors"
+                  >
+                    Try again
+                  </button>
+                  <button
+                    onClick={() => setView('home')}
+                    className="px-5 py-3 text-[15px] bg-white border-2 border-[#dde3dd] rounded-full hover:bg-[#eef1ed] transition-colors"
+                  >
+                    Back
+                  </button>
+                </div>
+              </>
+            ) : (
+              <div className="flex flex-col items-center gap-4 text-[#646464]">
+                <Loader2 size={28} className="animate-spin" />
+                <p className="text-[16px]">
+                  Building your {roundSize}-question quiz…
+                </p>
+                <p className="text-[13px] text-[#b4b8b4]">
+                  Reading the material and writing explanations. Future rounds of
+                  this material are served from the cache — no waiting.
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {view === 'quiz' && (
+          <QuizRunner
+            title={title}
+            questions={questions}
+            mode={mode}
+            onFinish={handleFinish}
+            onQuit={() => setView(isReview ? 'review' : 'home')}
+          />
+        )}
+
+        {view === 'results' && (
+          <Results
+            title={title}
+            questions={questions}
+            answers={answers}
+            roundSize={roundSize}
+            isReview={isReview}
+            onRound={(size) =>
+              runRound(size, material, materialId, title)
+            }
+            onRetake={retake}
+            onNewMaterial={() => {
+              if (isReview) {
+                setView('review');
+              } else {
+                setMaterial('');
+                setTitle('');
+                setView('home');
+              }
+            }}
+          />
+        )}
+
+        {view === 'history' && <History />}
+
+        {view === 'review' && (
+          <Review
+            userName={userName}
+            refreshKey={refreshKey}
+            onDrill={startReview}
+          />
+        )}
+      </main>
+    </div>
+  );
+}
