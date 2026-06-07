@@ -2,13 +2,10 @@ import { useEffect, useState } from 'react';
 
 const NAV = [
   { id: 'home', label: 'Home' },
-  { id: 'video', label: 'Video' },
+  { id: 'demo', label: 'Demo' },
   { id: 'features', label: 'Features' },
-  { id: 'cards', label: 'Cards' },
+  { id: 'cards', label: 'Who it’s for' },
 ];
-
-const LOGO =
-  'https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20260405_072635_e0ca60b6-0b6c-49a3-825d-b2b6a53dd63d.png&w=1280&q=85';
 
 /**
  * Desktop-only left rail (240px). Tracks the section in view with an
@@ -33,11 +30,9 @@ export default function Sidebar() {
 
   return (
     <aside className="hidden lg:flex fixed left-0 top-0 z-30 h-screen w-[240px] flex-col border-r-2 border-[#dde3dd] bg-[#fefffc] px-5 py-6">
-      <img
-        src={LOGO}
-        alt="FlowMate"
-        className="mb-8 h-10 w-10 rounded-xl object-cover"
-      />
+      <a href="#home" className="mb-8 font-mondwest text-[24px] leading-none">
+        Flow<span className="text-[#b4b8b4]">·quiz</span>
+      </a>
       <nav className="flex flex-col gap-1">
         {NAV.map((n) => (
           <a
@@ -53,6 +48,10 @@ export default function Sidebar() {
           </a>
         ))}
       </nav>
+
+      <p className="mt-auto text-[12px] leading-relaxed text-[#b4b8b4]">
+        Upload a chapter → get a quiz that explains every wrong answer.
+      </p>
     </aside>
   );
 }

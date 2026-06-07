@@ -20,12 +20,13 @@ export default function Landing({ onEnter }: Props) {
       <Sidebar />
       <Navbar onEnter={onEnter} />
       <div className="lg:ml-[240px]">
-        <Hero />
+        <Hero onEnter={onEnter} />
         <VideoSection />
         <FeaturesGrid />
         <CardsCarousel />
         <footer className="border-t border-[#e8e8e8] px-5 py-10 text-[13px] text-[#b4b8b4] lg:px-10">
-          FlowMate — transform your workflow using plain English.
+          Flow·quiz — turn any chapter, PDF, or slides into practice quizzes that
+          explain every wrong answer.
         </footer>
       </div>
     </div>

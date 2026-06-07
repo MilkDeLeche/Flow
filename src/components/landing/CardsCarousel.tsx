@@ -1,42 +1,46 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import gsap from 'gsap';
+import { useGSAP } from '@gsap/react';
 
 interface Card {
   category: string;
   text: string;
-  image: string;
+  from: string;
+  to: string;
 }
 
+// On-brand gradient cards (no external images, so nothing breaks or loads slow).
 const CARDS: Card[] = [
   {
-    category: 'For Everyone',
-    text: 'Unleash your creative vision',
-    image:
-      'https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20260405_081328_19f48c5b-ea4d-4f23-8f80-7374f31015d4.png&w=1280&q=85',
+    category: 'For students',
+    text: 'Turn this week’s chapter into real practice',
+    from: '#5b6e57',
+    to: '#39492f',
   },
   {
-    category: 'For Teams',
-    text: 'Smart helper supporting each teammate daily',
-    image:
-      'https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20260405_081342_ad378347-1ebd-4b17-a716-ee895bf739c0.png&w=1280&q=85',
+    category: 'For exam week',
+    text: 'Drill until every answer is automatic',
+    from: '#8a5a44',
+    to: '#5e342a',
   },
   {
-    category: 'For Enterprises',
-    text: 'Elevate your whole organization using business AI',
-    image:
-      'https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20260405_081415_a6e8a76c-224e-417b-bf99-6b86d6494644.png&w=1280&q=85',
+    category: 'Any subject',
+    text: 'Biology, econ, law, code — it reads them all',
+    from: '#46566b',
+    to: '#2b3340',
   },
   {
-    category: 'Platform',
-    text: 'Enhanced with FlowMate',
-    image:
-      'https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20260405_081513_cf1cd2c1-2122-4de6-90ed-acae8bfbdb00.png&w=1280&q=85',
+    category: 'In your language',
+    text: 'Spanish slides become a quiz en español',
+    from: '#6b4a63',
+    to: '#3f2b3a',
   },
   {
-    category: 'Security',
-    text: 'Creating trusted and helpful AI',
-    image:
-      'https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20260405_081541_9d2d28bf-d6a3-4b31-b0bb-cfc5202d4fcd.png&w=1280&q=85',
+    category: 'Private by design',
+    text: 'Your notes and keys stay yours',
+    from: '#2f4858',
+    to: '#1b2a33',
   },
 ];
 
@@ -45,6 +49,7 @@ const CARDS: Card[] = [
  * manual prev/next. Slides via a transformed track with custom easing.
  */
 export default function CardsCarousel() {
+  const root = useRef<HTMLElement>(null);
   const [perView, setPerView] = useState(3);
   const [index, setIndex] = useState(0);
 
@@ -68,17 +73,33 @@ export default function CardsCarousel() {
     return () => clearInterval(id);
   }, [maxIndex]);
 
+  useGSAP(
+    () => {
+      const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (reduce) return;
+      gsap.from('.carousel-head', {
+        opacity: 0,
+        y: 18,
+        duration: 0.7,
+        ease: 'power3.out',
+        scrollTrigger: { trigger: root.current, start: 'top 80%', once: true },
+      });
+    },
+    { scope: root }
+  );
+
   const prev = () => setIndex((i) => (i <= 0 ? maxIndex : i - 1));
   const next = () => setIndex((i) => (i >= maxIndex ? 0 : i + 1));
 
   return (
     <section
       id="cards"
+      ref={root}
       className="scroll-mt-24 border-t border-[#e8e8e8] px-5 py-12 lg:px-10 lg:py-20"
     >
-      <div className="mb-6 flex items-center justify-between">
-        <h2 className="font-mondwest text-[28px] leading-tight md:text-[40px] lg:text-[44px]">
-          Built for everyone
+      <div className="carousel-head mb-6 flex items-center justify-between">
+        <h2 className="max-w-[620px] font-mondwest text-[28px] leading-tight md:text-[40px] lg:text-[44px]">
+          Made for however you study
         </h2>
         <div className="flex gap-2">
           <button
@@ -116,18 +137,18 @@ export default function CardsCarousel() {
               className="shrink-0 px-2"
               style={{ flexBasis: `${100 / perView}%` }}
             >
-              <div className="group relative h-[500px] overflow-hidden rounded-2xl">
-                <img
-                  src={c.image}
-                  alt={c.text}
-                  className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+              <div
+                className="group relative h-[420px] overflow-hidden rounded-2xl md:h-[460px]"
+                style={{
+                  backgroundImage: `linear-gradient(135deg, ${c.from}, ${c.to})`,
+                }}
+              >
+                <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-white/10 transition-transform duration-700 group-hover:scale-105" />
                 <div className="absolute bottom-0 left-0 p-6 text-white">
                   <span className="text-[12px] uppercase tracking-wide text-white/70">
                     {c.category}
                   </span>
-                  <h3 className="mt-1 max-w-[260px] font-mondwest text-[26px] leading-tight">
+                  <h3 className="mt-1 max-w-[280px] font-mondwest text-[26px] leading-tight">
                     {c.text}
                   </h3>
                 </div>
