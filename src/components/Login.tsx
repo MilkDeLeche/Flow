@@ -3,7 +3,7 @@ import { Loader2, Lock, ArrowLeft } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 const LOGIN_VIDEO =
-  'https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260302_085640_276ea93b-d7da-4418-a09b-2aa5b490e838.mp4';
+  'https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260314_131748_f2ca2a28-fed7-44c8-b9a9-bd9acdd5ec31.mp4';
 
 interface LoginProps {
   /** Return to the public landing page without signing in. */
@@ -30,7 +30,7 @@ export default function Login({ onBack }: LoginProps) {
   };
 
   return (
-    <div className="relative min-h-screen text-[#2c2c2c] flex items-center justify-center px-5 overflow-hidden">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden px-5 text-[#2c2c2c]">
       <video
         autoPlay
         loop
@@ -39,31 +39,28 @@ export default function Login({ onBack }: LoginProps) {
         className="absolute inset-0 h-full w-full object-cover"
         src={LOGIN_VIDEO}
       />
-      {/* legibility overlay — keeps the off-white brand feel over the video */}
-      <div className="absolute inset-0 bg-[#fefffc]/55 backdrop-blur-[2px]" />
+
+      {onBack && (
+        <button
+          onClick={onBack}
+          className="absolute left-5 top-5 z-20 inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-[14px] text-[#2c2c2c] shadow-[0_8px_24px_rgba(44,44,44,0.14)] transition-colors hover:bg-[#eef1ed] md:left-8 md:top-8"
+        >
+          <ArrowLeft size={15} /> Back
+        </button>
+      )}
 
       <div className="relative z-10 w-full max-w-[400px]">
-        {onBack && (
-          <button
-            onClick={onBack}
-            className="mb-6 inline-flex items-center gap-1.5 text-[14px] text-[#646464] transition-colors hover:text-[#2c2c2c]"
-          >
-            <ArrowLeft size={15} /> Back
-          </button>
-        )}
-        <div className="text-center mb-8">
-          <h1 className="font-mondwest text-[44px] leading-none mb-2">
-            Flow
-          </h1>
+        <div className="mb-8 text-center">
+          <h1 className="mb-2 font-mondwest text-[44px] leading-none">Flow</h1>
           <p className="text-[15px] text-[#646464]">Sign in to keep studying.</p>
         </div>
 
         <form
           onSubmit={submit}
-          className="border-2 border-[#dde3dd] rounded-2xl p-6 space-y-4 bg-white"
+          className="space-y-4 rounded-2xl border-2 border-[#dde3dd] bg-white p-6"
         >
           <div>
-            <label className="block text-[13px] text-[#646464] mb-1.5">
+            <label className="mb-1.5 block text-[13px] text-[#646464]">
               Email
             </label>
             <input
@@ -72,11 +69,11 @@ export default function Login({ onBack }: LoginProps) {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full px-4 py-3 text-[15px] bg-[#fefffc] border-2 border-[#dde3dd] rounded-xl outline-none focus:border-[#b8beb8] transition-colors"
+              className="w-full rounded-xl border-2 border-[#dde3dd] bg-[#fefffc] px-4 py-3 text-[15px] outline-none transition-colors focus:border-[#b8beb8]"
             />
           </div>
           <div>
-            <label className="block text-[13px] text-[#646464] mb-1.5">
+            <label className="mb-1.5 block text-[13px] text-[#646464]">
               Password
             </label>
             <input
@@ -85,12 +82,12 @@ export default function Login({ onBack }: LoginProps) {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="w-full px-4 py-3 text-[15px] bg-[#fefffc] border-2 border-[#dde3dd] rounded-xl outline-none focus:border-[#b8beb8] transition-colors"
+              className="w-full rounded-xl border-2 border-[#dde3dd] bg-[#fefffc] px-4 py-3 text-[15px] outline-none transition-colors focus:border-[#b8beb8]"
             />
           </div>
 
           {error && (
-            <p className="text-[13.5px] text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+            <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-[13.5px] text-red-600">
               {error}
             </p>
           )}
@@ -98,7 +95,7 @@ export default function Login({ onBack }: LoginProps) {
           <button
             type="submit"
             disabled={busy}
-            className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 text-[15px] bg-black text-white rounded-full hover:bg-[#2c2c2c] transition-colors disabled:opacity-60"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-black px-5 py-3 text-[15px] text-white transition-colors hover:bg-[#2c2c2c] disabled:opacity-60"
           >
             {busy ? (
               <Loader2 size={16} className="animate-spin" />
@@ -108,7 +105,6 @@ export default function Login({ onBack }: LoginProps) {
             Sign in
           </button>
         </form>
-
       </div>
     </div>
   );
