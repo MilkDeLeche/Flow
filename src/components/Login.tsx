@@ -2,6 +2,9 @@ import { useState } from 'react';
 import { Loader2, Lock, ArrowLeft } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
+const LOGIN_VIDEO =
+  'https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260302_085640_276ea93b-d7da-4418-a09b-2aa5b490e838.mp4';
+
 interface LoginProps {
   /** Return to the public landing page without signing in. */
   onBack?: () => void;
@@ -27,8 +30,19 @@ export default function Login({ onBack }: LoginProps) {
   };
 
   return (
-    <div className="min-h-screen bg-[#fefffc] text-[#2c2c2c] flex items-center justify-center px-5">
-      <div className="w-full max-w-[400px]">
+    <div className="relative min-h-screen text-[#2c2c2c] flex items-center justify-center px-5 overflow-hidden">
+      <video
+        autoPlay
+        loop
+        muted
+        playsInline
+        className="absolute inset-0 h-full w-full object-cover"
+        src={LOGIN_VIDEO}
+      />
+      {/* legibility overlay — keeps the off-white brand feel over the video */}
+      <div className="absolute inset-0 bg-[#fefffc]/55 backdrop-blur-[2px]" />
+
+      <div className="relative z-10 w-full max-w-[400px]">
         {onBack && (
           <button
             onClick={onBack}
