@@ -5,27 +5,27 @@ interface Props {
 
 /**
  * Fixed top bar. Offsets right of the 240px sidebar on desktop, full width on
- * mobile. Brand on the left, Pricing/Community + auth buttons on the right.
+ * mobile. Brand on the left, section links + auth buttons on the right.
  */
 export default function Navbar({ onEnter }: Props) {
   return (
     <header className="fixed left-0 right-0 top-0 z-40 border-b border-[#e8e8e8] bg-[#fefffc]/90 backdrop-blur-sm lg:left-[240px]">
       <div className="flex h-16 items-center justify-between px-5 lg:px-10">
         <a href="#home" className="font-mondwest text-[28px] leading-none lg:text-[32px]">
-          FlowMate
+          Flow<span className="text-[#b4b8b4]">·quiz</span>
         </a>
         <div className="flex items-center gap-2 lg:gap-4">
           <a
             href="#features"
             className="hidden text-[15px] text-[#646464] transition-colors hover:text-[#2c2c2c] lg:inline"
           >
-            Pricing
+            Features
           </a>
           <a
-            href="#cards"
+            href="#demo"
             className="hidden text-[15px] text-[#646464] transition-colors hover:text-[#2c2c2c] lg:inline"
           >
-            Community
+            Demo
           </a>
           <button
             onClick={onEnter}
@@ -37,7 +37,7 @@ export default function Navbar({ onEnter }: Props) {
             onClick={onEnter}
             className="rounded-full bg-black px-4 py-2 text-[14px] text-white transition-colors hover:bg-[#2c2c2c]"
           >
-            Sign up
+            Start studying
           </button>
         </div>
       </div>
