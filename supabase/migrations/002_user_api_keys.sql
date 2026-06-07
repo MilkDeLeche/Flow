@@ -20,6 +20,10 @@ alter table public.user_api_keys enable row level security;
 -- Belt-and-suspenders: with RLS on and no policies, anon/authenticated already
 -- have zero access. Revoke direct grants too.
 revoke all on public.user_api_keys from anon, authenticated;
+grant all on public.user_api_keys to service_role;
+
+-- Make PostgREST/Supabase REST see the table immediately after running this.
+notify pgrst, 'reload schema';
 
 -- Verify:
 --   select table_name from information_schema.tables
