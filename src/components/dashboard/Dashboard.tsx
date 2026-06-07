@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
-import { LogOut, Pencil, Trash2, Check, X, Image as ImageIcon } from 'lucide-react';
-import ApiKeyPanel from '../ApiKeyPanel';
+import { Pencil, Trash2, Check, X, Image as ImageIcon } from 'lucide-react';
 import AddCourseForm from './AddCourseForm';
 import { THEMES, themeGradient } from '../../lib/themes';
 import {
@@ -12,8 +11,6 @@ import {
 
 interface Props {
   byokActive: boolean;
-  onKeyChange: () => void;
-  onSignOut: () => void;
   onOpenCourse: (c: Course) => void;
   onChanged: () => void;
   refreshKey: number;
@@ -30,8 +27,6 @@ function fileToDataUrl(file: File): Promise<string> {
 
 export default function Dashboard({
   byokActive,
-  onKeyChange,
-  onSignOut,
   onOpenCourse,
   onChanged,
   refreshKey,
@@ -236,16 +231,6 @@ export default function Dashboard({
           )}
         </div>
 
-        {/* API key */}
-        <ApiKeyPanel onChange={onKeyChange} />
-
-        {/* Sign out */}
-        <button
-          onClick={onSignOut}
-          className="inline-flex items-center gap-2 rounded-full bg-black px-5 py-2.5 text-[14px] text-white transition-colors hover:bg-[#2c2c2c]"
-        >
-          <LogOut size={15} /> Sign out
-        </button>
       </div>
     </div>
   );

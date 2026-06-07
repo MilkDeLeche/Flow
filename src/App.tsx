@@ -11,6 +11,7 @@ import Landing from './components/landing/Landing';
 import CoursesHome from './components/dashboard/CoursesHome';
 import Dashboard from './components/dashboard/Dashboard';
 import CourseDetail from './components/dashboard/CourseDetail';
+import Settings from './components/Settings';
 import { generateQuiz } from './lib/api';
 import { saveAttempt } from './lib/history';
 import { supabase } from './lib/supabase';
@@ -45,7 +46,8 @@ type View =
   | 'quiz'
   | 'results'
   | 'history'
-  | 'review';
+  | 'review'
+  | 'settings';
 
 const USER_KEY = 'flow_user';
 
@@ -267,8 +269,10 @@ export default function App() {
   if (authRequired && !session)
     return <Login onBack={() => setScreen('landing')} />;
 
-  const topView: 'home' | 'history' | 'review' | 'dashboard' =
-    view === 'history' || view === 'review' || view === 'dashboard' ? view : 'home';
+  const topView: 'home' | 'history' | 'review' | 'dashboard' | 'settings' =
+    view === 'history' || view === 'review' || view === 'dashboard' || view === 'settings'
+      ? view
+      : 'home';
 
   return (
     <div className="min-h-screen bg-[#fefffc] text-[#2c2c2c]">
@@ -301,11 +305,16 @@ export default function App() {
         {view === 'dashboard' && (
           <Dashboard
             byokActive={byokActive}
-            onKeyChange={reloadKeyStatus}
-            onSignOut={() => supabase?.auth.signOut()}
             onOpenCourse={openCourse}
             onChanged={() => setRefreshKey((k) => k + 1)}
             refreshKey={refreshKey}
+          />
+        )}
+
+        {view === 'settings' && (
+          <Settings
+            onKeyChange={reloadKeyStatus}
+            onSignOut={() => supabase?.auth.signOut()}
           />
         )}
 

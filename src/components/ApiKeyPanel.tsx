@@ -82,7 +82,7 @@ export default function ApiKeyPanel({ onChange }: ApiKeyPanelProps) {
   const active = status.configured;
 
   return (
-    <section className="max-w-[760px] mx-auto px-5 md:px-8 pb-16">
+    <section>
       <div className="border-2 border-[#dee2de] rounded-2xl p-5">
         <div className="flex items-start justify-between gap-4">
           <div>

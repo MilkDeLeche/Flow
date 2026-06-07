@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-type View = 'home' | 'history' | 'review' | 'dashboard';
+type View = 'home' | 'history' | 'review' | 'dashboard' | 'settings';
 
 interface TopBarProps {
   view: View;
@@ -63,7 +63,10 @@ export default function TopBar({
           {navBtn('history', 'History')}
 
           {authed ? (
-            navBtn('dashboard', 'Dashboard')
+            <>
+              {navBtn('dashboard', 'Dashboard')}
+              {navBtn('settings', 'Settings')}
+            </>
           ) : editing ? (
             <input
               autoFocus
