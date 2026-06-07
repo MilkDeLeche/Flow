@@ -1,6 +1,14 @@
 // "Bring your own key" — a personal LLM key (Anthropic / OpenAI / Gemini).
-// Stored ONLY in this browser and sent per-request; never stored on our server.
-// With a key set, the user runs on their own key/budget with no shared limits.
+//
+// PRODUCTION (Supabase configured): the key is sent ONCE to /api/key over HTTPS,
+// encrypted at rest, and tied to your account. It is never kept in the browser
+// and never sent again — the server decrypts it server-side per request. So your
+// key follows you across devices and nobody can read it from the client.
+//
+// LOCAL DEV (no Supabase, or `npm run dev`): falls back to localStorage for
+// convenience, sent inline to the local dev API. Never used in production.
+import { supabase } from './supabase';
+
 export type Provider = 'anthropic' | 'openai' | 'gemini';
 
 export interface Byok {
@@ -9,7 +17,19 @@ export interface Byok {
   model: string;
 }
 
+export interface KeyStatus {
+  configured: boolean;
+  provider?: Provider;
+  model?: string;
+  hint?: string;
+}
+
 const STORE = 'flow_byok';
+
+// Server-backed only when Supabase is configured AND we're not in local dev.
+function serverMode(): boolean {
+  return !!supabase && !import.meta.env.DEV;
+}
 
 export const PROVIDER_LABEL: Record<Provider, string> = {
   anthropic: 'Anthropic (Claude)',
@@ -47,26 +67,103 @@ export function keyLooksValid(provider: Provider, key: string): boolean {
   return /^AIza[A-Za-z0-9_-]{20,}$/.test(k);
 }
 
-export function getByok(): Byok | null {
+function mask(key: string): string {
+  const k = key.trim();
+  return k.length <= 8 ? '••••' : `${k.slice(0, 6)}…${k.slice(-4)}`;
+}
+
+async function authHeaders(): Promise<Record<string, string>> {
+  const h: Record<string, string> = { 'content-type': 'application/json' };
+  if (supabase) {
+    const { data } = await supabase.auth.getSession();
+    const token = data.session?.access_token;
+    if (token) h['authorization'] = `Bearer ${token}`;
+  }
+  return h;
+}
+
+/** Current key status (configured?, provider, model, masked hint). */
+export async function loadKeyStatus(): Promise<KeyStatus> {
+  if (serverMode()) {
+    try {
+      const res = await fetch('/api/key', { headers: await authHeaders() });
+      if (!res.ok) return { configured: false };
+      return (await res.json()) as KeyStatus;
+    } catch {
+      return { configured: false };
+    }
+  }
   try {
     const raw = localStorage.getItem(STORE);
-    if (!raw) return null;
+    if (!raw) return { configured: false };
     const v = JSON.parse(raw) as Byok;
-    return v && v.provider && v.key ? v : null;
+    return v?.key
+      ? { configured: true, provider: v.provider, model: v.model, hint: mask(v.key) }
+      : { configured: false };
   } catch {
-    return null;
+    return { configured: false };
   }
 }
 
-export function setByok(value: Byok | null) {
+export async function saveKey(
+  provider: Provider,
+  key: string,
+  model: string
+): Promise<{ ok: boolean; error?: string; status?: KeyStatus }> {
+  if (serverMode()) {
+    try {
+      const res = await fetch('/api/key', {
+        method: 'POST',
+        headers: await authHeaders(),
+        body: JSON.stringify({ provider, key: key.trim(), model }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) return { ok: false, error: data.error || 'Could not save your key.' };
+      return { ok: true, status: data as KeyStatus };
+    } catch {
+      return { ok: false, error: 'Network error while saving your key.' };
+    }
+  }
   try {
-    if (value) localStorage.setItem(STORE, JSON.stringify(value));
-    else localStorage.removeItem(STORE);
+    localStorage.setItem(STORE, JSON.stringify({ provider, key: key.trim(), model }));
+  } catch {
+    /* ignore quota */
+  }
+  return {
+    ok: true,
+    status: { configured: true, provider, model, hint: mask(key) },
+  };
+}
+
+export async function clearKey(): Promise<void> {
+  if (serverMode()) {
+    try {
+      await fetch('/api/key', { method: 'DELETE', headers: await authHeaders() });
+    } catch {
+      /* ignore */
+    }
+    return;
+  }
+  try {
+    localStorage.removeItem(STORE);
   } catch {
     /* ignore */
   }
 }
 
-export function hasByok(): boolean {
-  return !!getByok();
+/**
+ * The key to send inline with a generate request — ONLY in local dev mode.
+ * In production the server holds the key, so this returns null (the browser
+ * never carries the key).
+ */
+export function getRequestKey(): Byok | null {
+  if (serverMode()) return null;
+  try {
+    const raw = localStorage.getItem(STORE);
+    if (!raw) return null;
+    const v = JSON.parse(raw) as Byok;
+    return v?.key ? v : null;
+  } catch {
+    return null;
+  }
 }

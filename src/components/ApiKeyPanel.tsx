@@ -1,14 +1,17 @@
-import { useState } from 'react';
-import { Check, Key, Trash2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Check, Key, Trash2, Loader2 } from 'lucide-react';
 import {
-  getByok,
-  setByok,
+  loadKeyStatus,
+  saveKey,
+  clearKey,
   keyLooksValid,
   PROVIDER_LABEL,
   PROVIDER_MODELS,
   KEY_HINT,
   type Provider,
+  type KeyStatus,
 } from '../lib/byok';
+import { supabaseEnabled } from '../lib/supabase';
 
 interface ApiKeyPanelProps {
   onChange?: () => void;
@@ -16,44 +19,67 @@ interface ApiKeyPanelProps {
 
 const PROVIDERS: Provider[] = ['anthropic', 'openai', 'gemini'];
 
-export default function ApiKeyPanel({ onChange }: ApiKeyPanelProps) {
-  const existing = getByok();
-  const [active, setActive] = useState(existing);
-  const [open, setOpen] = useState(false);
+// In production the key is encrypted to your account; in local dev it lives in
+// this browser only. The copy reflects whichever mode is active.
+const stored = supabaseEnabled && !import.meta.env.DEV;
 
-  const [provider, setProvider] = useState<Provider>(
-    existing?.provider ?? 'anthropic'
-  );
-  const [model, setModel] = useState(
-    existing?.model ?? PROVIDER_MODELS['anthropic'][0].id
-  );
+export default function ApiKeyPanel({ onChange }: ApiKeyPanelProps) {
+  const [status, setStatus] = useState<KeyStatus>({ configured: false });
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  const [provider, setProvider] = useState<Provider>('anthropic');
+  const [model, setModel] = useState(PROVIDER_MODELS['anthropic'][0].id);
   const [key, setKey] = useState('');
   const [error, setError] = useState<string | null>(null);
+
+  const refresh = async () => {
+    const s = await loadKeyStatus();
+    setStatus(s);
+    if (s.provider) setProvider(s.provider);
+    if (s.model) setModel(s.model);
+  };
+
+  useEffect(() => {
+    refresh();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const pickProvider = (p: Provider) => {
     setProvider(p);
     setModel(PROVIDER_MODELS[p][0].id); // default to cheapest
   };
 
-  const save = () => {
+  const save = async () => {
     if (!keyLooksValid(provider, key)) {
-      setError(`That doesn’t look like a ${PROVIDER_LABEL[provider]} key (${KEY_HINT[provider]}).`);
+      setError(
+        `That doesn’t look like a ${PROVIDER_LABEL[provider]} key (${KEY_HINT[provider]}).`
+      );
       return;
     }
-    const v = { provider, key: key.trim(), model };
-    setByok(v);
-    setActive(v);
-    setKey('');
+    setBusy(true);
     setError(null);
+    const res = await saveKey(provider, key.trim(), model);
+    setBusy(false);
+    if (!res.ok) {
+      setError(res.error || 'Could not save your key.');
+      return;
+    }
+    setKey('');
     setOpen(false);
+    if (res.status) setStatus(res.status);
     onChange?.();
   };
 
-  const clear = () => {
-    setByok(null);
-    setActive(null);
+  const remove = async () => {
+    setBusy(true);
+    await clearKey();
+    setBusy(false);
+    setStatus({ configured: false });
     onChange?.();
   };
+
+  const active = status.configured;
 
   return (
     <section className="max-w-[760px] mx-auto px-5 md:px-8 pb-16">
@@ -66,16 +92,24 @@ export default function ApiKeyPanel({ onChange }: ApiKeyPanelProps) {
             </h3>
             <p className="text-[13px] text-[#646464] mt-1 leading-relaxed max-w-[540px]">
               {active ? (
-                <>
-                  Unlimited use on your own key — stored only in this browser,
-                  never on our servers.
-                </>
+                stored ? (
+                  <>
+                    Unlimited use on your own key — encrypted and saved to your
+                    account, synced across devices. We never show or send it back
+                    to the browser.
+                  </>
+                ) : (
+                  <>Unlimited use on your own key — stored only in this browser (dev).</>
+                )
               ) : (
                 <>
                   The free tier is a quick taste (cheapest model, strict limit,
                   paste-text only). For unlimited use, add your own key from
-                  Anthropic, OpenAI, or Google Gemini — Gemini has a free tier,
-                  so it can cost you nothing. Your key stays in this browser only.
+                  Anthropic, OpenAI, or Google Gemini — Gemini has a free tier, so
+                  it can cost you nothing.{' '}
+                  {stored
+                    ? 'Your key is encrypted and tied to your account — never kept in the browser.'
+                    : 'Your key stays in this browser only (dev mode).'}
                 </>
               )}
             </p>
@@ -90,13 +124,14 @@ export default function ApiKeyPanel({ onChange }: ApiKeyPanelProps) {
         {active ? (
           <div className="flex flex-wrap items-center gap-3 mt-4">
             <span className="text-[13px] text-[#2c2c2c]">
-              {PROVIDER_LABEL[active.provider]} · {active.model}
+              {PROVIDER_LABEL[status.provider ?? 'anthropic']} · {status.model}
+              {status.hint && (
+                <span className="text-[#b4b8b4]"> · {status.hint}</span>
+              )}
             </span>
             <button
               onClick={() => {
-                pickProvider(active.provider);
-                setModel(active.model);
-                setActive(null);
+                setKey('');
                 setOpen(true);
               }}
               className="text-[13px] text-[#646464] hover:text-[#2c2c2c] transition-colors"
@@ -104,8 +139,9 @@ export default function ApiKeyPanel({ onChange }: ApiKeyPanelProps) {
               Change
             </button>
             <button
-              onClick={clear}
-              className="inline-flex items-center gap-1.5 text-[13px] text-red-600 hover:text-red-700 transition-colors"
+              onClick={remove}
+              disabled={busy}
+              className="inline-flex items-center gap-1.5 text-[13px] text-red-600 hover:text-red-700 transition-colors disabled:opacity-60"
             >
               <Trash2 size={14} /> Remove
             </button>
@@ -150,21 +186,23 @@ export default function ApiKeyPanel({ onChange }: ApiKeyPanelProps) {
               value={key}
               onChange={(e) => setKey(e.target.value)}
               placeholder={KEY_HINT[provider]}
+              autoComplete="off"
               className="w-full px-4 py-2.5 text-[14px] bg-white border-2 border-[#dde3dd] rounded-xl outline-none focus:border-[#b8beb8] transition-colors"
             />
             {error && <p className="text-[13px] text-red-600">{error}</p>}
             <div className="flex items-center gap-2">
               <button
                 onClick={save}
-                className="px-4 py-2 text-[14px] bg-black text-white rounded-full hover:bg-[#2c2c2c] transition-colors"
+                disabled={busy}
+                className="inline-flex items-center gap-2 px-4 py-2 text-[14px] bg-black text-white rounded-full hover:bg-[#2c2c2c] transition-colors disabled:opacity-60"
               >
+                {busy && <Loader2 size={14} className="animate-spin" />}
                 Save key
               </button>
               <button
                 onClick={() => {
                   setOpen(false);
                   setError(null);
-                  if (existing) setActive(existing);
                 }}
                 className="px-4 py-2 text-[14px] text-[#646464] hover:text-[#2c2c2c] transition-colors"
               >
