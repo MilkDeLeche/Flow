@@ -23,8 +23,13 @@ function send(res: ServerResponse, status: number, body: unknown) {
 function safeKeyError(err: unknown): string {
   const message = err instanceof Error ? err.message : String(err || '');
   const lower = message.toLowerCase();
-  if (lower.includes('user_api_keys') || lower.includes('schema cache')) {
-    return 'Key storage table is missing. Run supabase/migrations/002_user_api_keys.sql in Supabase.';
+  if (
+    lower.includes('user_api_keys') ||
+    lower.includes('schema cache') ||
+    lower.includes('relation') ||
+    lower.includes('does not exist')
+  ) {
+    return 'Key storage table is missing. Run supabase/migrations/002_user_api_keys.sql in Supabase, then redeploy Vercel.';
   }
   if (lower.includes('encryption') || lower.includes('32 bytes')) {
     return 'Key encryption is misconfigured. APP_ENCRYPTION_KEY must be 64 hex chars or valid base64.';
