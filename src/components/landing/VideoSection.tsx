@@ -5,11 +5,12 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useGSAP } from '@gsap/react';
 
 const TYPED = 'Turn chapter 7 of my biology notes into a 20-question quiz';
+const DEMO_VIDEO =
+  'https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260602_150901_c45b90ec-18d7-42ff-90e2-b95d7109e330.mp4';
 
 /**
- * Demo section. An on-brand animated gradient panel (GSAP-floated blobs) with a
- * liquid-glass card that types out a study prompt — mirroring what you'd ask the
- * app to do. Reveals on scroll; honors prefers-reduced-motion.
+ * Demo section. The requested video sits behind the liquid-glass card that
+ * types out a study prompt. Reveals on scroll; honors prefers-reduced-motion.
  */
 export default function VideoSection() {
   const root = useRef<HTMLDivElement>(null);
@@ -41,26 +42,6 @@ export default function VideoSection() {
           });
         }
       }
-
-      // Slowly drifting gradient blobs (skipped when reduced motion is on).
-      if (!reduce) {
-        gsap.to('[data-blob="1"]', {
-          x: 40,
-          y: -30,
-          duration: 9,
-          ease: 'sine.inOut',
-          repeat: -1,
-          yoyo: true,
-        });
-        gsap.to('[data-blob="2"]', {
-          x: -50,
-          y: 30,
-          duration: 11,
-          ease: 'sine.inOut',
-          repeat: -1,
-          yoyo: true,
-        });
-      }
     },
     { scope: root }
   );
@@ -88,16 +69,16 @@ export default function VideoSection() {
       className="scroll-mt-24 border-t border-[#e8e8e8] px-5 py-12 lg:px-10 lg:py-20"
     >
       <div className="relative mx-auto flex aspect-[16/10] max-w-[980px] items-center justify-center overflow-hidden rounded-3xl bg-[#eef1ed] md:aspect-video">
-        {/* gradient backdrop */}
-        <div
-          data-blob="1"
-          className="pointer-events-none absolute -left-16 -top-16 h-72 w-72 rounded-full bg-[#cdd8cc] blur-3xl"
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          preload="metadata"
+          className="absolute inset-0 h-full w-full object-cover"
+          src={DEMO_VIDEO}
         />
-        <div
-          data-blob="2"
-          className="pointer-events-none absolute -bottom-20 -right-10 h-80 w-80 rounded-full bg-[#d8cfc0] blur-3xl"
-        />
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/40 to-transparent" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/35 via-[#fefffc]/10 to-black/15" />
 
         {/* glass prompt card */}
         <div

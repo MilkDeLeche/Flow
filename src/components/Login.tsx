@@ -3,7 +3,7 @@ import { Loader2, Lock, ArrowLeft } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 const LOGIN_VIDEO =
-  'https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260302_085640_276ea93b-d7da-4418-a09b-2aa5b490e838.mp4';
+  'https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260314_131748_f2ca2a28-fed7-44c8-b9a9-bd9acdd5ec31.mp4';
 
 interface LoginProps {
   /** Return to the public landing page without signing in. */
