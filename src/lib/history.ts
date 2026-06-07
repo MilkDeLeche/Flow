@@ -18,6 +18,7 @@ export interface Attempt {
   score: number;
   total: number;
   user_name: string;
+  mode: string;
 }
 
 export async function saveMaterial(
@@ -50,6 +51,7 @@ export async function saveAttempt(a: {
   score: number;
   total: number;
   userName: string;
+  mode?: string;
 }): Promise<void> {
   if (!supabase) return;
   const { error } = await supabase.from('attempts').insert({
@@ -59,8 +61,23 @@ export async function saveAttempt(a: {
     score: a.score,
     total: a.total,
     user_name: a.userName,
+    mode: a.mode ?? 'practice',
   });
   if (error) console.warn('saveAttempt failed:', error.message);
+}
+
+/** All attempts for a set of materials (a course's chapters), newest first. */
+export async function listAttemptsForMaterials(
+  materialIds: string[]
+): Promise<Attempt[]> {
+  if (!supabase || !materialIds.length) return [];
+  const { data, error } = await supabase
+    .from('attempts')
+    .select('*')
+    .in('material_id', materialIds)
+    .order('created_at', { ascending: false });
+  if (error || !data) return [];
+  return data as Attempt[];
 }
 
 export async function listAttempts(limit = 50): Promise<Attempt[]> {

@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
-import { LogOut } from 'lucide-react';
 
-type View = 'home' | 'history' | 'review';
+type View = 'home' | 'history' | 'review' | 'dashboard';
 
 interface TopBarProps {
   view: View;
@@ -10,7 +9,6 @@ interface TopBarProps {
   authed: boolean;
   missedCount: number;
   onChangeUser: (name: string) => void;
-  onSignOut: () => void;
 }
 
 export default function TopBar({
@@ -20,7 +18,6 @@ export default function TopBar({
   authed,
   missedCount,
   onChangeUser,
-  onSignOut,
 }: TopBarProps) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(userName);
@@ -66,14 +63,7 @@ export default function TopBar({
           {navBtn('history', 'History')}
 
           {authed ? (
-            <button
-              onClick={onSignOut}
-              title={userName}
-              className="inline-flex items-center gap-1.5 px-3 md:px-4 py-2 text-[14px] bg-black text-white rounded-full hover:bg-[#2c2c2c] transition-colors"
-            >
-              <LogOut size={14} />
-              <span className="hidden md:inline">Sign out</span>
-            </button>
+            navBtn('dashboard', 'Dashboard')
           ) : editing ? (
             <input
               autoFocus

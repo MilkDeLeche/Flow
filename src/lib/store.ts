@@ -10,6 +10,7 @@ export interface RecentMaterial {
   content: string;
   sourceType: string;
   createdAt: string;
+  courseId?: string;
   lastScore?: { score: number; total: number; roundSize: number };
 }
 
@@ -56,12 +57,19 @@ function nowIso() {
 export async function recordMaterial(
   title: string,
   content: string,
-  sourceType: string
+  sourceType: string,
+  courseId?: string
 ): Promise<string> {
   if (supabase) {
     const { data, error } = await supabase
       .from('materials')
-      .insert({ title, content, source_type: sourceType, char_count: content.length })
+      .insert({
+        title,
+        content,
+        source_type: sourceType,
+        char_count: content.length,
+        course_id: courseId ?? null,
+      })
       .select('id')
       .single();
     if (!error && data) return data.id as string;
@@ -70,9 +78,55 @@ export async function recordMaterial(
   const id = uid();
   const list = lsGet<RecentMaterial[]>(LS_MATERIALS, []);
   const filtered = list.filter((m) => m.title !== title);
-  filtered.unshift({ id, title, content, sourceType, createdAt: nowIso() });
+  filtered.unshift({ id, title, content, sourceType, createdAt: nowIso(), courseId });
   lsSet(LS_MATERIALS, filtered.slice(0, 24));
   return id;
+}
+
+/** Chapters (materials) belonging to a course, newest first, with last score. */
+export async function listMaterialsByCourse(
+  courseId: string
+): Promise<RecentMaterial[]> {
+  if (supabase) {
+    const { data, error } = await supabase
+      .from('materials')
+      .select('id,title,content,source_type,created_at,course_id')
+      .eq('course_id', courseId)
+      .order('created_at', { ascending: false });
+    if (error || !data) return [];
+
+    const ids = data.map((m) => m.id);
+    const scores = new Map<string, RecentMaterial['lastScore']>();
+    if (ids.length) {
+      const { data: atts } = await supabase
+        .from('attempts')
+        .select('material_id,score,total,round_size,created_at')
+        .in('material_id', ids)
+        .order('created_at', { ascending: false });
+      for (const a of atts || []) {
+        if (a.material_id && !scores.has(a.material_id))
+          scores.set(a.material_id, {
+            score: a.score,
+            total: a.total,
+            roundSize: a.round_size,
+          });
+      }
+    }
+
+    return data.map((m) => ({
+      id: m.id,
+      title: m.title,
+      content: m.content,
+      sourceType: m.source_type,
+      createdAt: m.created_at,
+      courseId: m.course_id ?? undefined,
+      lastScore: scores.get(m.id),
+    }));
+  }
+
+  return lsGet<RecentMaterial[]>(LS_MATERIALS, []).filter(
+    (m) => m.courseId === courseId
+  );
 }
 
 export async function listRecentMaterials(limit = 12): Promise<RecentMaterial[]> {
