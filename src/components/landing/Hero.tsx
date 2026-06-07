@@ -5,8 +5,8 @@ interface Props {
 }
 
 /**
- * Hero — oversized PPMondwest headline describing the app (turn any material
- * into a progressive practice quiz). Reveals with the shared TextFade.
+ * Hero - oversized PPMondwest headline describing the app.
+ * Reveals with the shared TextFade.
  */
 export default function Hero({ onEnter }: Props) {
   return (
@@ -19,8 +19,8 @@ export default function Hero({ onEnter }: Props) {
           Turn any chapter into a quiz that teaches you
         </h1>
         <p className="mt-6 max-w-[620px] text-[17px] text-[#444141] lg:max-w-[540px] lg:text-[18px]">
-          Paste a chapter, drop a PDF, or upload your slides — Flow writes
-          progressive practice rounds (10 → 20 → 30 → 40 → 50 questions) and
+          Paste a chapter, drop a PDF, or upload your slides. Flow writes
+          progressive practice rounds (10, 20, 30, 40, 50 questions) and
           explains <em>why</em> every wrong answer is wrong, in the language of
           your material.
         </p>
