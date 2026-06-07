@@ -16,6 +16,7 @@ import {
   verifyUser,
 } from './_auth';
 import { checkAndRecordUsage } from './_usage';
+import { getStoredKey } from './_keys';
 
 const MAX_MATERIAL_CHARS = 200_000;
 const MAX_PDF_BYTES = 4_500_000; // Vercel request-body ceiling
@@ -23,10 +24,14 @@ const MAX_PDF_BYTES = 4_500_000; // Vercel request-body ceiling
 // Free tier: strict + cheapest. BYOK bypasses these (user's own key/cost).
 const FREE_HOUR = Number(process.env.FREE_LIMIT_HOUR || 1);
 const FREE_DAY = Number(process.env.FREE_LIMIT_DAY || 2);
+// Cap questions per free-tier call so the shared key can't run up big bills.
+const FREE_MAX_COUNT = Number(process.env.FREE_MAX_COUNT || 10);
 
 function send(res: ServerResponse, status: number, body: unknown) {
   res.statusCode = status;
   res.setHeader('content-type', 'application/json');
+  res.setHeader('cache-control', 'no-store');
+  res.setHeader('x-content-type-options', 'nosniff');
   res.end(JSON.stringify(body));
 }
 
@@ -85,7 +90,16 @@ export default async function handler(
       return send(res, 400, {
         error: `That doesn’t look like a valid ${reqProvider} API key.`,
       });
-    const byok = rawKey ? { provider: reqProvider, key: rawKey } : null;
+    let byok: { provider: Provider; key: string; model?: string } | null = rawKey
+      ? { provider: reqProvider, key: rawKey }
+      : null;
+
+    // No inline key? Use the user's own key stored (encrypted) on their account.
+    // Decrypted only here, server-side — it never reaches the browser.
+    if (!byok && sb && userId) {
+      const stored = await getStoredKey(userId, sb);
+      if (stored) byok = stored;
+    }
     usedByok = !!byok;
 
     if (!pdfBase64 && material.trim().length < 40)
@@ -111,15 +125,18 @@ export default async function handler(
         return send(res, 400, { error: 'That file is not a valid PDF.' });
     }
 
-    // Resolve provider / key / model.
+    // Resolve provider / key / model / question count.
     let provider: Provider;
     let apiKey: string;
     let model: string;
+    let genCount = count;
 
     if (byok) {
       provider = byok.provider;
       apiKey = byok.key;
-      model = resolveModel(provider, typeof body.model === 'string' ? body.model : '');
+      const wanted =
+        byok.model || (typeof body.model === 'string' ? body.model : '');
+      model = resolveModel(provider, wanted);
     } else {
       // Free tier: cheapest model on the shared key, strictly rate-limited.
       if (!serverKey) {
@@ -129,6 +146,8 @@ export default async function handler(
       provider = 'anthropic';
       apiKey = serverKey;
       model = FREE_MODEL;
+      // Tighten cost on the shared key: clamp question count for the free tier.
+      genCount = Math.min(count, FREE_MAX_COUNT);
 
       if (sb && userId) {
         const rate = await checkAndRecordUsage(userId, sb, 'text', {
@@ -148,7 +167,7 @@ export default async function handler(
 
     const questions = await generateQuiz({
       material,
-      count,
+      count: genCount,
       avoid,
       pdfBase64,
       provider,
@@ -162,7 +181,8 @@ export default async function handler(
     const status = (err as { status?: number })?.status;
     if (usedByok && (status === 401 || status === 403))
       return send(res, 400, {
-        error: 'Your API key was rejected. Check the key and try again.',
+        error:
+          'Your API key was rejected. Update it in the key panel and try again.',
       });
     // Otherwise log server-side and return a generic message.
     console.error('generate-quiz failed:', err);

@@ -1,6 +1,6 @@
 import type { QuizQuestion } from './types';
 import { supabase } from './supabase';
-import { getByok } from './byok';
+import { getRequestKey } from './byok';
 
 /**
  * Calls the server (Vercel function in prod, Vite middleware in dev) to
@@ -24,7 +24,9 @@ export async function generateQuiz(
     if (token) headers['authorization'] = `Bearer ${token}`;
   }
 
-  const byok = getByok();
+  // In production the server uses your stored key — nothing is sent here.
+  // In local dev, getRequestKey() returns the localStorage key to send inline.
+  const byok = getRequestKey();
 
   const res = await fetch('/api/generate-quiz', {
     method: 'POST',

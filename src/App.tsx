@@ -9,10 +9,11 @@ import Results from './components/Results';
 import History from './components/History';
 import Review from './components/Review';
 import Login from './components/Login';
+import Landing from './components/landing/Landing';
 import { generateQuiz } from './lib/api';
 import { saveAttempt } from './lib/history';
 import { supabase } from './lib/supabase';
-import { hasByok } from './lib/byok';
+import { loadKeyStatus } from './lib/byok';
 import { useAuth } from './lib/useAuth';
 import {
   addToBank,
@@ -49,6 +50,9 @@ function shuffle<T>(arr: T[]): T[] {
 export default function App() {
   const { session, loading: authLoading, authRequired } = useAuth();
 
+  // Top-level screen: the FlowMate landing page (front door) vs. the quiz app.
+  const [screen, setScreen] = useState<'landing' | 'app'>('landing');
+
   const [view, setView] = useState<View>('home');
   const [localName, setLocalName] = useState('Student');
 
@@ -71,7 +75,7 @@ export default function App() {
   const [missedCount, setMissedCount] = useState(0);
   const [refreshKey, setRefreshKey] = useState(0);
   const [error, setError] = useState<string | null>(null);
-  const [byokActive, setByokActive] = useState(hasByok());
+  const [byokActive, setByokActive] = useState(false);
 
   const userName = authRequired
     ? session?.user.email ?? 'Student'
@@ -81,6 +85,12 @@ export default function App() {
     const saved = localStorage.getItem(USER_KEY);
     if (saved) setLocalName(saved);
   }, []);
+
+  // Whether the user has their own key configured (stored on their account in
+  // prod, or in this browser in dev). Re-checked when the session changes.
+  useEffect(() => {
+    loadKeyStatus().then((s) => setByokActive(s.configured));
+  }, [session]);
 
   const refreshMissed = useCallback(() => {
     countMissed(userName).then(setMissedCount);
@@ -212,6 +222,11 @@ export default function App() {
     }
   };
 
+  // ---- Landing page (public front door) ----
+  if (screen === 'landing') {
+    return <Landing onEnter={() => setScreen('app')} />;
+  }
+
   // ---- Auth gate ----
   if (authRequired && authLoading) {
     return (
@@ -242,7 +257,11 @@ export default function App() {
           <>
             <JumpBackIn onResume={handleResume} refreshKey={refreshKey} />
             <Uploader onStart={handleStart} allowUpload={byokActive} />
-            <ApiKeyPanel onChange={() => setByokActive(hasByok())} />
+            <ApiKeyPanel
+              onChange={() =>
+                loadKeyStatus().then((s) => setByokActive(s.configured))
+              }
+            />
           </>
         )}
 
