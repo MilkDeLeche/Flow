@@ -1,0 +1,40 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+  font-family: 'PPMondwest';
+  src: url('https://www.generalintelligencecompany.com/_next/static/media/17330fd087386262-s.p.woff2')
+    format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --background: #fefffc;
+  --text-primary: #2c2c2c;
+  --text-secondary: #444141;
+  --text-tertiary: #646464;
+  --text-muted: #b4b8b4;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background-color: var(--background);
+  color: var(--text-primary);
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.font-mondwest {
+  font-family: 'PPMondwest', ui-serif, Georgia, serif;
+  font-kerning: none;
+  letter-spacing: -0.04em;
+}
