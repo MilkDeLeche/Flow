@@ -51,8 +51,10 @@ export default function Login({ onBack }: LoginProps) {
 
       <div className="relative z-10 w-full max-w-[400px]">
         <div className="mb-8 text-center">
-          <h1 className="mb-2 font-mondwest text-[44px] leading-none">Flow</h1>
-          <p className="text-[15px] text-[#646464]">Sign in to keep studying.</p>
+          <h1 className="mb-2 font-mondwest text-[44px] leading-none text-white">
+            Flow
+          </h1>
+          <p className="text-[15px] text-white">Sign in to keep studying.</p>
         </div>
 
         <form
