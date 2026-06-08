@@ -8,7 +8,7 @@
 import { createClient } from '@supabase/supabase-js';
 import type { ServerSupabase } from './_auth';
 import { encryptSecret, decryptSecret, maskKey } from './_crypto';
-import { isProvider, keyLooksValid, resolveModel, type Provider } from './_generateQuiz';
+import { isProvider, keyLooksValid, resolveModel, type Provider } from './_providers';
 
 const TABLE = 'user_api_keys';
 

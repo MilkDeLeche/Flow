@@ -10,8 +10,7 @@ import {
   validateSupabaseConfig,
   verifyUser,
 } from './_auth';
-import { getStoredKeyStatus, setStoredKey, deleteStoredKey } from './_keys';
-import { isProvider, keyLooksValid } from './_generateQuiz';
+import { isProvider, keyLooksValid } from './_providers';
 
 function send(res: ServerResponse, status: number, body: unknown) {
   res.statusCode = status;
@@ -86,6 +85,7 @@ export default async function handler(
 
   try {
     if (req.method === 'GET') {
+      const { getStoredKeyStatus } = await import('./_keys');
       return send(res, 200, await getStoredKeyStatus(user.id, sb));
     }
 
@@ -99,11 +99,13 @@ export default async function handler(
         return send(res, 400, {
           error: `That doesn’t look like a valid ${provider} API key.`,
         });
+      const { setStoredKey } = await import('./_keys');
       const status = await setStoredKey(user.id, sb, provider, key, model);
       return send(res, 200, status);
     }
 
     if (req.method === 'DELETE') {
+      const { deleteStoredKey } = await import('./_keys');
       await deleteStoredKey(user.id, sb);
       return send(res, 200, { configured: false });
     }

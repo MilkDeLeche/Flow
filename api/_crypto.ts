@@ -4,7 +4,7 @@
 // If APP_ENCRYPTION_KEY is missing, derive a stable key from the server-only
 // Supabase service role key so BYOK storage still works without exposing
 // plaintext keys to the browser.
-import crypto from 'crypto';
+import * as crypto from 'crypto';
 
 function getKey(): Buffer {
   const raw = process.env.APP_ENCRYPTION_KEY || '';
