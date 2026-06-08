@@ -9,8 +9,8 @@ import {
   getServerSupabase,
   validateSupabaseConfig,
   verifyUser,
-} from './_auth';
-import { isProvider, keyLooksValid } from './_providers';
+} from './_auth.js';
+import { isProvider, keyLooksValid } from './_providers.js';
 
 function send(res: ServerResponse, status: number, body: unknown) {
   res.statusCode = status;
@@ -85,7 +85,7 @@ export default async function handler(
 
   try {
     if (req.method === 'GET') {
-      const { getStoredKeyStatus } = await import('./_keys');
+      const { getStoredKeyStatus } = await import('./_keys.js');
       return send(res, 200, await getStoredKeyStatus(user.id, sb));
     }
 
@@ -99,13 +99,13 @@ export default async function handler(
         return send(res, 400, {
           error: `That doesn’t look like a valid ${provider} API key.`,
         });
-      const { setStoredKey } = await import('./_keys');
+      const { setStoredKey } = await import('./_keys.js');
       const status = await setStoredKey(user.id, sb, provider, key, model);
       return send(res, 200, status);
     }
 
     if (req.method === 'DELETE') {
-      const { deleteStoredKey } = await import('./_keys');
+      const { deleteStoredKey } = await import('./_keys.js');
       await deleteStoredKey(user.id, sb);
       return send(res, 200, { configured: false });
     }

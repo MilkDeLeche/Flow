@@ -6,9 +6,9 @@
 // users (anon/authenticated) cannot touch it — only the service role (this
 // module) can, mirroring the rate-limit table.
 import { createClient } from '@supabase/supabase-js';
-import type { ServerSupabase } from './_auth';
-import { encryptSecret, decryptSecret, maskKey } from './_crypto';
-import { isProvider, keyLooksValid, resolveModel, type Provider } from './_providers';
+import type { ServerSupabase } from './_auth.js';
+import { encryptSecret, decryptSecret, maskKey } from './_crypto.js';
+import { isProvider, keyLooksValid, resolveModel, type Provider } from './_providers.js';
 
 const TABLE = 'user_api_keys';
 

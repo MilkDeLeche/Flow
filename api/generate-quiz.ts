@@ -8,15 +8,15 @@ import {
   resolveModel,
   FREE_MODEL,
   type Provider,
-} from './_generateQuiz';
+} from './_generateQuiz.js';
 import {
   bearerToken,
   emailAllowed,
   getServerSupabase,
   verifyUser,
-} from './_auth';
-import { checkAndRecordUsage } from './_usage';
-import { getStoredKey } from './_keys';
+} from './_auth.js';
+import { checkAndRecordUsage } from './_usage.js';
+import { getStoredKey } from './_keys.js';
 
 const MAX_MATERIAL_CHARS = 200_000;
 const MAX_PDF_BYTES = 4_500_000; // Vercel request-body ceiling

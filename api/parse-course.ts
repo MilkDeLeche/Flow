@@ -2,10 +2,10 @@
 // AI auto-fill for a new course (name + description). Requires the user's OWN
 // key (paid feature) — the shared free-tier key is never used here.
 import type { IncomingMessage, ServerResponse } from 'http';
-import { bearerToken, emailAllowed, getServerSupabase, verifyUser } from './_auth';
-import { getStoredKey } from './_keys';
-import { parseCourse } from './_parseCourse';
-import { isProvider, keyLooksValid, resolveModel, type Provider } from './_generateQuiz';
+import { bearerToken, emailAllowed, getServerSupabase, verifyUser } from './_auth.js';
+import { getStoredKey } from './_keys.js';
+import { parseCourse } from './_parseCourse.js';
+import { isProvider, keyLooksValid, resolveModel, type Provider } from './_generateQuiz.js';
 
 const MAX_TEXT = 60_000;
 const MAX_B64 = 4_500_000;

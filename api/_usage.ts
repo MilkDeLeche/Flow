@@ -6,7 +6,7 @@
 // delete their own counter to bypass the limit. The DB function takes a per-user
 // advisory lock, so concurrent requests can't race past the cap.
 import { createClient } from '@supabase/supabase-js';
-import type { ServerSupabase } from './_auth';
+import type { ServerSupabase } from './_auth.js';
 
 // Total requests/day across ALL users (protects your overall budget). 0 = off.
 const GLOBAL_DAY_LIMIT = Number(process.env.GLOBAL_DAILY_LIMIT || 0);

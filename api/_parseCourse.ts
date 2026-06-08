@@ -4,7 +4,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import OpenAI from 'openai';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import type { Provider } from './_generateQuiz';
+import type { Provider } from './_generateQuiz.js';
 
 export interface ParseCourseInput {
   provider: Provider;
