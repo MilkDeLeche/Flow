@@ -316,6 +316,49 @@ export default function App() {
     setView('course');
   };
 
+  const handleCourseCreated = async (
+    course: Course,
+    initialChapter?: { content: string; sourceType: string }
+  ) => {
+    setError(null);
+
+    if (!initialChapter) {
+      openCourse(course);
+      return;
+    }
+
+    const studyMaterial =
+      prepareStudyMaterial(initialChapter.content) || initialChapter.content;
+    const chapterTitle = inferChapterTitle(studyMaterial, 'Chapter material', false);
+    const id = await recordMaterial(
+      chapterTitle,
+      studyMaterial,
+      initialChapter.sourceType,
+      course.id
+    );
+    const courseWithChapter = {
+      ...course,
+      chapterCount: course.chapterCount + 1,
+    };
+
+    setCurrentCourse(courseWithChapter);
+    setRoundCourse(courseWithChapter);
+    setTitle(chapterTitle);
+    setMaterial(studyMaterial);
+    setMaterialId(id);
+    setPdfBase64(undefined);
+    setReaderMaterial({
+      id,
+      title: chapterTitle,
+      content: studyMaterial,
+      sourceType: initialChapter.sourceType,
+      createdAt: new Date().toISOString(),
+      courseId: course.id,
+    });
+    setRefreshKey((k) => k + 1);
+    setView('reader');
+  };
+
   // ---- Landing page (public front door) ----
   if (screen === 'landing') {
     return <Landing onEnter={() => setScreen('app')} />;
@@ -357,6 +400,7 @@ export default function App() {
             refreshKey={refreshKey}
             byokActive={byokActive}
             onOpenCourse={openCourse}
+            onCourseCreated={handleCourseCreated}
             onChanged={() => setRefreshKey((k) => k + 1)}
             onQuickQuiz={() => {
               setUploadCourseId(null);
@@ -397,6 +441,13 @@ export default function App() {
             onStudy={(m) => handleResume(m, currentCourse)}
             onReview={() => setView('review')}
             onChanged={() => setRefreshKey((k) => k + 1)}
+            onDelete={() => {
+              setCurrentCourse(null);
+              setReaderMaterial(null);
+              setRoundCourse(null);
+              setRefreshKey((k) => k + 1);
+              setView('home');
+            }}
           />
         )}
 

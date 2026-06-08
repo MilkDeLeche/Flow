@@ -5,16 +5,18 @@ import {
   CheckCircle2,
   FileText,
   GraduationCap,
+  Loader2,
   NotebookTabs,
   Plus,
   Play,
   Target,
+  Trash2,
 } from 'lucide-react';
 import { themeGradient } from '../../lib/themes';
 import { listMaterialsByCourse, type RecentMaterial } from '../../lib/store';
 import { listAttemptsForMaterials, type Attempt } from '../../lib/history';
 import type { Course } from '../../lib/courses';
-import { updateCourse } from '../../lib/courses';
+import { deleteCourse, updateCourse } from '../../lib/courses';
 import { useLocale } from '../../lib/i18n';
 
 interface Props {
@@ -26,6 +28,7 @@ interface Props {
   onStudy: (m: RecentMaterial) => void;
   onReview: () => void;
   onChanged: () => void;
+  onDelete: () => void;
 }
 
 function fmtDate(iso: string): string {
@@ -49,6 +52,7 @@ export default function CourseDetail({
   onStudy,
   onReview,
   onChanged,
+  onDelete,
 }: Props) {
   const { t } = useLocale();
   const [chapters, setChapters] = useState<RecentMaterial[]>([]);
@@ -57,6 +61,9 @@ export default function CourseDetail({
   const [year, setYear] = useState(course.year || '');
   const [finishedAt, setFinishedAt] = useState(course.finishedAt || '');
   const [savingMeta, setSavingMeta] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useEffect(() => {
     let on = true;
@@ -101,6 +108,17 @@ export default function CourseDetail({
   const reopenCourse = async () => {
     setFinishedAt('');
     await saveMeta('');
+  };
+  const handleDelete = async () => {
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      await deleteCourse(course.id);
+      onDelete();
+    } catch (e) {
+      setDeleteError(e instanceof Error ? e.message : t.deleteCourseFailed);
+      setDeleting(false);
+    }
   };
 
   return (
@@ -265,6 +283,48 @@ export default function CourseDetail({
             ? `Finished ${fmtDate(finishedAt)}`
             : 'Mark the class finished when the semester is over.'}
         </p>
+      </section>
+
+      <section className="mb-8 rounded-xl border border-red-200 bg-red-50/60 p-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="text-[14px] font-medium text-red-950">
+              {t.deleteCourse}
+            </h2>
+            <p className="mt-1 max-w-[680px] text-[12px] leading-relaxed text-red-800/80">
+              {t.deleteCourseHint}
+            </p>
+          </div>
+          {confirmDelete ? (
+            <div className="flex shrink-0 flex-wrap gap-2">
+              <button
+                onClick={() => setConfirmDelete(false)}
+                disabled={deleting}
+                className="inline-flex h-10 items-center justify-center rounded-full border-2 border-red-200 bg-white px-4 text-[13px] text-red-950 transition-colors hover:bg-red-100 disabled:opacity-50"
+              >
+                {t.cancel}
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="inline-flex h-10 items-center justify-center gap-2 rounded-full bg-red-700 px-4 text-[13px] text-white transition-colors hover:bg-red-800 disabled:opacity-50"
+              >
+                {deleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+                {t.confirmDeleteCourse}
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => setConfirmDelete(true)}
+              className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-full border-2 border-red-200 bg-white px-4 text-[13px] text-red-800 transition-colors hover:bg-red-100 hover:text-red-950"
+            >
+              <Trash2 size={14} /> {t.deleteCourse}
+            </button>
+          )}
+        </div>
+        {deleteError && (
+          <p className="mt-3 text-[12px] text-red-700">{deleteError}</p>
+        )}
       </section>
 
       <h2 className="mb-3 text-[15px] font-medium text-[#2c2c2c]">{t.courseModules}</h2>

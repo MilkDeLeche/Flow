@@ -4,7 +4,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import OpenAI from 'openai';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { PROVIDER_MODELS, type Provider } from './_providers.js';
+import type { Provider } from './_providers.js';
 export { FREE_MODEL, isProvider, keyLooksValid, resolveModel, type Provider } from './_providers.js';
 
 export interface QuizQuestion {

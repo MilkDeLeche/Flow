@@ -7,7 +7,10 @@ import { createCourse, type Course } from '../../lib/courses';
 
 interface Props {
   byokActive: boolean;
-  onCreated: (c: Course) => void;
+  onCreated: (
+    c: Course,
+    initialChapter?: { content: string; sourceType: string }
+  ) => void;
 }
 
 const IMG_EXT = ['png', 'jpg', 'jpeg', 'webp', 'gif'];
@@ -140,7 +143,13 @@ export default function AddCourseForm({ byokActive, onCreated }: Props) {
     setTheme(THEMES[0].key);
     setImageUrl(undefined);
     setNote(null);
-    onCreated(c);
+    onCreated(
+      c,
+      pasteText.trim().length >= 40
+        ? { content: pasteText, sourceType: 'paste' }
+        : undefined
+    );
+    setPasteText('');
   };
 
   return (
@@ -162,7 +171,7 @@ export default function AddCourseForm({ byokActive, onCreated }: Props) {
           value={pasteText}
           onChange={(e) => setPasteText(e.target.value)}
           rows={5}
-          placeholder="Paste a chapter, syllabus, study guide, or notes. AI will infer the course name and about text."
+          placeholder="Paste a chapter, syllabus, study guide, or notes. AI will infer the course name and about text. If you save with chapter text here, it becomes the first chapter."
           className="w-full resize-y rounded-xl border-2 border-[#dde3dd] bg-white px-4 py-3 text-[14px] leading-relaxed outline-none transition-colors focus:border-[#b8beb8]"
         />
         <button
@@ -290,7 +299,9 @@ export default function AddCourseForm({ byokActive, onCreated }: Props) {
           className="inline-flex items-center gap-2 rounded-full bg-black px-5 py-2.5 text-[14px] text-white transition-colors hover:bg-[#2c2c2c] disabled:opacity-60"
         >
           {busy && <Loader2 size={14} className="animate-spin" />}
-          Create course
+          {pasteText.trim().length >= 40
+            ? 'Create course + chapter'
+            : 'Create course'}
         </button>
       </div>
     </div>

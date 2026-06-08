@@ -12,6 +12,10 @@ interface Props {
   refreshKey: number;
   byokActive: boolean;
   onOpenCourse: (c: Course) => void;
+  onCourseCreated: (
+    c: Course,
+    initialChapter?: { content: string; sourceType: string }
+  ) => void;
   onChanged: () => void;
   onQuickQuiz: () => void;
   onResume: (m: RecentMaterial) => void;
@@ -22,6 +26,7 @@ export default function CoursesHome({
   refreshKey,
   byokActive,
   onOpenCourse,
+  onCourseCreated,
   onChanged,
   onQuickQuiz,
   onResume,
@@ -84,11 +89,11 @@ export default function CoursesHome({
         <div className="mt-5 max-w-[760px]">
           <AddCourseForm
             byokActive={byokActive}
-            onCreated={(course) => {
+            onCreated={(course, initialChapter) => {
               setAdding(false);
               reload();
               onChanged();
-              onOpenCourse(course);
+              onCourseCreated(course, initialChapter);
             }}
           />
         </div>

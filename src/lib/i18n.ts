@@ -189,6 +189,11 @@ export const copy = {
     notStarted: 'Not started',
     courseModules: 'Course modules',
     chapterMaterial: 'Chapter material',
+    deleteCourse: 'Delete course',
+    deleteCourseHint:
+      'Deletes this course, its chapters, cached quiz questions, attempts, and mistake review items.',
+    confirmDeleteCourse: 'Delete forever',
+    deleteCourseFailed: 'Could not delete this course.',
   },
   es: {
     back: 'Volver',
@@ -353,6 +358,11 @@ export const copy = {
     notStarted: 'Sin empezar',
     courseModules: 'Modulos del curso',
     chapterMaterial: 'Material del capitulo',
+    deleteCourse: 'Eliminar curso',
+    deleteCourseHint:
+      'Elimina este curso, sus capitulos, preguntas guardadas, intentos y errores de repaso.',
+    confirmDeleteCourse: 'Eliminar para siempre',
+    deleteCourseFailed: 'No se pudo eliminar este curso.',
   },
 } as const;
 

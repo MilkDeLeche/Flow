@@ -18,6 +18,9 @@ export interface Course {
 
 const LS_COURSES = 'flow_courses';
 const LS_IMAGE_COLUMN = 'flow_course_image_column';
+const LS_MATERIALS = 'flow_materials';
+const LS_MISSED = 'flow_missed';
+const LS_BANK = 'flow_bank';
 
 function lsGet<T>(key: string, fallback: T): T {
   try {
@@ -51,6 +54,15 @@ interface StoredCourse {
   year?: string;
   finishedAt?: string;
   createdAt: string;
+}
+
+interface StoredMaterial {
+  id: string;
+  courseId?: string;
+}
+
+interface StoredMissedQuestion {
+  materialId: string;
 }
 
 type CoursePatch = {
@@ -261,9 +273,48 @@ export async function updateCourse(
 
 export async function deleteCourse(id: string): Promise<void> {
   if (supabase) {
-    await supabase.from('courses').delete().eq('id', id);
+    const { data: mats } = await supabase
+      .from('materials')
+      .select('id')
+      .eq('course_id', id);
+    const materialIds = (mats || []).map((m) => m.id as string);
+
+    if (materialIds.length) {
+      const cleanup = [
+        await supabase.from('attempts').delete().in('material_id', materialIds),
+        await supabase.from('missed_questions').delete().in('material_id', materialIds),
+        await supabase.from('quiz_bank').delete().in('material_id', materialIds),
+        await supabase.from('reader_marks').delete().in('material_id', materialIds),
+        await supabase.from('materials').delete().in('id', materialIds),
+      ];
+      const cleanupError = cleanup.find((result) => result.error)?.error;
+      if (cleanupError) throw new Error(cleanupError.message);
+    }
+
+    const { error } = await supabase.from('courses').delete().eq('id', id);
+    if (error) throw new Error(error.message);
     return;
   }
+
+  const materials = lsGet<StoredMaterial[]>(LS_MATERIALS, []);
+  const materialIds = new Set(
+    materials.filter((m) => m.courseId === id).map((m) => m.id)
+  );
+
   const list = lsGet<StoredCourse[]>(LS_COURSES, []);
   lsSet(LS_COURSES, list.filter((c) => c.id !== id));
+  lsSet(
+    LS_MATERIALS,
+    materials.filter((m) => !materialIds.has(m.id))
+  );
+
+  const bank = lsGet<Record<string, unknown[]>>(LS_BANK, {});
+  for (const materialId of materialIds) delete bank[materialId];
+  lsSet(LS_BANK, bank);
+
+  const missed = lsGet<StoredMissedQuestion[]>(LS_MISSED, []);
+  lsSet(
+    LS_MISSED,
+    missed.filter((m) => !materialIds.has(m.materialId))
+  );
 }
