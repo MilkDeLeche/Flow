@@ -14,6 +14,7 @@ import { themeGradient } from '../../lib/themes';
 import { listMaterialsByCourse, type RecentMaterial } from '../../lib/store';
 import { listAttemptsForMaterials, type Attempt } from '../../lib/history';
 import type { Course } from '../../lib/courses';
+import { updateCourse } from '../../lib/courses';
 import { useLocale } from '../../lib/i18n';
 
 interface Props {
@@ -24,6 +25,7 @@ interface Props {
   onRead: (m: RecentMaterial) => void;
   onStudy: (m: RecentMaterial) => void;
   onReview: () => void;
+  onChanged: () => void;
 }
 
 function fmtDate(iso: string): string {
@@ -46,10 +48,15 @@ export default function CourseDetail({
   onRead,
   onStudy,
   onReview,
+  onChanged,
 }: Props) {
   const { t } = useLocale();
   const [chapters, setChapters] = useState<RecentMaterial[]>([]);
   const [attempts, setAttempts] = useState<Attempt[]>([]);
+  const [semester, setSemester] = useState(course.semester || '');
+  const [year, setYear] = useState(course.year || '');
+  const [finishedAt, setFinishedAt] = useState(course.finishedAt || '');
+  const [savingMeta, setSavingMeta] = useState(false);
 
   useEffect(() => {
     let on = true;
@@ -64,12 +71,37 @@ export default function CourseDetail({
     };
   }, [course.id, refreshKey]);
 
+  useEffect(() => {
+    setSemester(course.semester || '');
+    setYear(course.year || '');
+    setFinishedAt(course.finishedAt || '');
+  }, [course.id, course.semester, course.year, course.finishedAt]);
+
   const quizzes = attempts.filter((a) => a.mode !== 'exam');
   const tests = attempts.filter((a) => a.mode === 'exam');
   const latestChapter = chapters[0];
   const bestScore = attempts.length
     ? Math.max(...attempts.map((a) => Math.round((a.score / Math.max(1, a.total)) * 100)))
     : 0;
+  const saveMeta = async (nextFinishedAt = finishedAt) => {
+    setSavingMeta(true);
+    await updateCourse(course.id, {
+      semester,
+      year,
+      finishedAt: nextFinishedAt || null,
+    });
+    onChanged();
+    setSavingMeta(false);
+  };
+  const markFinished = async () => {
+    const doneAt = new Date().toISOString();
+    setFinishedAt(doneAt);
+    await saveMeta(doneAt);
+  };
+  const reopenCourse = async () => {
+    setFinishedAt('');
+    await saveMeta('');
+  };
 
   return (
     <div className="mx-auto max-w-[1120px] px-5 pb-16 pt-6 md:px-8">
@@ -182,6 +214,58 @@ export default function CourseDetail({
           <Target size={16} /> {t.reviewMistakes}
         </button>
       </div>
+
+      <section className="mb-8 rounded-xl border border-[#dde3dd] bg-white p-4">
+        <div className="grid gap-3 md:grid-cols-[1fr_1fr_auto_auto] md:items-end">
+          <div>
+            <label className="mb-1.5 block text-[12px] text-[#646464]">Semester</label>
+            <input
+              value={semester}
+              onChange={(e) => setSemester(e.target.value)}
+              placeholder="Fall, Spring, Summer..."
+              className="h-10 w-full rounded-lg border border-[#dde3dd] bg-[#fbfcf8] px-3 text-[14px] outline-none focus:border-[#b8beb8]"
+            />
+          </div>
+          <div>
+            <label className="mb-1.5 block text-[12px] text-[#646464]">Year</label>
+            <input
+              value={year}
+              onChange={(e) => setYear(e.target.value)}
+              placeholder="2026"
+              className="h-10 w-full rounded-lg border border-[#dde3dd] bg-[#fbfcf8] px-3 text-[14px] outline-none focus:border-[#b8beb8]"
+            />
+          </div>
+          <button
+            onClick={() => saveMeta()}
+            disabled={savingMeta}
+            className="inline-flex h-10 items-center justify-center rounded-full border-2 border-[#dde3dd] px-4 text-[13px] transition-colors hover:bg-[#eef1ed] disabled:opacity-50"
+          >
+            Save details
+          </button>
+          {finishedAt ? (
+            <button
+              onClick={reopenCourse}
+              disabled={savingMeta}
+              className="inline-flex h-10 items-center justify-center rounded-full border-2 border-[#dde3dd] px-4 text-[13px] transition-colors hover:bg-[#eef1ed] disabled:opacity-50"
+            >
+              Reopen
+            </button>
+          ) : (
+            <button
+              onClick={markFinished}
+              disabled={savingMeta}
+              className="inline-flex h-10 items-center justify-center rounded-full bg-black px-4 text-[13px] text-white transition-colors hover:bg-[#2c2c2c] disabled:opacity-50"
+            >
+              Finished
+            </button>
+          )}
+        </div>
+        <p className="mt-2 text-[12px] text-[#8a8f8a]">
+          {finishedAt
+            ? `Finished ${fmtDate(finishedAt)}`
+            : 'Mark the class finished when the semester is over.'}
+        </p>
+      </section>
 
       <h2 className="mb-3 text-[15px] font-medium text-[#2c2c2c]">{t.courseModules}</h2>
       {chapters.length === 0 ? (

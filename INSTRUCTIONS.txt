@@ -1,0 +1,32 @@
+Flow update notes
+
+Before testing the latest course workspace updates in production:
+
+1. Run the Supabase SQL migration:
+   supabase/migrations/004_course_metadata.sql
+
+   This adds optional course fields:
+   - semester
+   - year
+   - finished_at
+
+   The same schema changes are also included in:
+   supabase/fix_current_schema.sql
+
+2. The previous reader notes/highlights migration should already be applied:
+   supabase/migrations/003_reader_marks.sql
+
+3. What changed in this update:
+   - Course creation can now start from pasted text, not just file upload.
+   - AI can infer the course name and about text from pasted material.
+   - Course chapters without clear chapter headings get a generic editable title.
+   - Obvious footnotes, references, bibliographies, and citation-only lines are stripped before quiz generation.
+   - Quiz generation is instructed not to quiz footnotes or citation metadata.
+   - Courses now have editable semester, year, and finished status.
+   - The planner has a visible clickable monthly calendar for selecting test days.
+
+4. Verification run locally:
+   npm.cmd run build
+
+5. Left intentionally untracked:
+   .claude/

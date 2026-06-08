@@ -19,7 +19,7 @@ import { supabase } from './lib/supabase';
 import { loadKeyStatus } from './lib/byok';
 import { useAuth } from './lib/useAuth';
 import { useLocale } from './lib/i18n';
-import { inferChapterTitle } from './lib/chapter';
+import { inferChapterTitle, prepareStudyMaterial } from './lib/chapter';
 import { parseCourseFromInput } from './lib/parseCourse';
 import type { Course } from './lib/courses';
 import {
@@ -176,6 +176,10 @@ export default function App() {
     const typed = rawTitle.trim();
     if (typed) return typed;
 
+    if (uploadCourseId) {
+      return inferChapterTitle(content, 'Chapter material', false);
+    }
+
     if (byokActive) {
       try {
         const meta = await parseCourseFromInput({
@@ -199,20 +203,21 @@ export default function App() {
     mode: QuizMode;
     pdfBase64?: string;
   }) => {
+    const studyMaterial = prepareStudyMaterial(args.material) || args.material;
     const finalTitle = await resolveMaterialTitle(
       args.title,
-      args.material,
+      studyMaterial,
       args.pdfBase64
     );
     setTitle(finalTitle);
-    setMaterial(args.material);
+    setMaterial(studyMaterial);
     setMode(args.mode);
     setPdfBase64(args.pdfBase64);
     // Attach to a course when adding a chapter from inside one.
     setRoundCourse(uploadCourseId ? currentCourse : null);
     const id = await recordMaterial(
       finalTitle,
-      args.material,
+      studyMaterial,
       args.sourceType,
       uploadCourseId ?? undefined
     );
@@ -223,7 +228,7 @@ export default function App() {
       const savedMaterial: RecentMaterial = {
         id,
         title: finalTitle,
-        content: args.material,
+        content: studyMaterial,
         sourceType: args.sourceType,
         createdAt: new Date().toISOString(),
         courseId: uploadCourseId,
@@ -234,7 +239,7 @@ export default function App() {
       return;
     }
 
-    await runRound(args.roundSize, args.material, id, finalTitle, args.pdfBase64);
+    await runRound(args.roundSize, studyMaterial, id, finalTitle, args.pdfBase64);
   };
 
   const handleResume = async (
@@ -391,6 +396,7 @@ export default function App() {
             }}
             onStudy={(m) => handleResume(m, currentCourse)}
             onReview={() => setView('review')}
+            onChanged={() => setRefreshKey((k) => k + 1)}
           />
         )}
 

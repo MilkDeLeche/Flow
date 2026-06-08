@@ -37,8 +37,11 @@ function fileToDataUrl(file: File): Promise<string> {
 export default function AddCourseForm({ byokActive, onCreated }: Props) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  const [semester, setSemester] = useState('');
+  const [year, setYear] = useState('');
   const [theme, setTheme] = useState(THEMES[0].key);
   const [imageUrl, setImageUrl] = useState<string | undefined>();
+  const [pasteText, setPasteText] = useState('');
   const [busy, setBusy] = useState(false);
   const [aiBusy, setAiBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -84,6 +87,30 @@ export default function AddCourseForm({ byokActive, onCreated }: Props) {
     autofill(file);
   };
 
+  const autofillFromPaste = async () => {
+    if (!byokActive) {
+      setError('AI auto-fill needs your own API key. Or type the details manually.');
+      return;
+    }
+    if (pasteText.trim().length < 80) {
+      setError('Paste a little more material so AI can tell what class this is.');
+      return;
+    }
+    setError(null);
+    setNote(null);
+    setAiBusy(true);
+    try {
+      const meta = await parseCourseFromInput({ text: pasteText });
+      setName(meta.name);
+      setDescription(meta.description);
+      setNote('Filled in from pasted material. You can edit it before saving.');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Auto-fill failed.');
+    } finally {
+      setAiBusy(false);
+    }
+  };
+
   const onImage = async (file?: File) => {
     if (!file) return;
     if (!file.type.startsWith('image/')) {
@@ -104,10 +131,12 @@ export default function AddCourseForm({ byokActive, onCreated }: Props) {
       return;
     }
     setBusy(true);
-    const c = await createCourse({ name, description, theme, imageUrl });
+    const c = await createCourse({ name, description, theme, imageUrl, semester, year });
     setBusy(false);
     setName('');
     setDescription('');
+    setSemester('');
+    setYear('');
     setTheme(THEMES[0].key);
     setImageUrl(undefined);
     setNote(null);
@@ -118,9 +147,33 @@ export default function AddCourseForm({ byokActive, onCreated }: Props) {
     <div className="rounded-2xl border-2 border-[#dee2de] p-5">
       <h3 className="text-[15px] font-medium text-[#2c2c2c]">Add a course</h3>
       <p className="mt-1 text-[13px] leading-relaxed text-[#646464]">
-        Upload a syllabus, chapter, slides, or a photo of your notes and let AI
-        name it for you — or just type it in.
+        Paste a chapter, syllabus, or notes so AI can infer the class and summary,
+        or type everything yourself.
       </p>
+
+      <div className="mt-4">
+        <div className="mb-2 flex items-center justify-between gap-3">
+          <label className="text-[12px] text-[#646464]">Paste course material</label>
+          <span className="text-[12px] text-[#b4b8b4]">
+            {pasteText.length.toLocaleString()} chars
+          </span>
+        </div>
+        <textarea
+          value={pasteText}
+          onChange={(e) => setPasteText(e.target.value)}
+          rows={5}
+          placeholder="Paste a chapter, syllabus, study guide, or notes. AI will infer the course name and about text."
+          className="w-full resize-y rounded-xl border-2 border-[#dde3dd] bg-white px-4 py-3 text-[14px] leading-relaxed outline-none transition-colors focus:border-[#b8beb8]"
+        />
+        <button
+          onClick={autofillFromPaste}
+          disabled={aiBusy || pasteText.trim().length < 80}
+          className="mt-2 inline-flex items-center gap-2 rounded-full border-2 border-[#dde3dd] bg-white px-4 py-2.5 text-[14px] transition-colors hover:bg-[#eef1ed] disabled:opacity-50"
+        >
+          {aiBusy ? <Loader2 size={15} className="animate-spin" /> : <Sparkles size={15} />}
+          Fill from pasted text
+        </button>
+      </div>
 
       <div className="mt-4 flex flex-wrap items-center gap-3">
         <button
@@ -157,6 +210,21 @@ export default function AddCourseForm({ byokActive, onCreated }: Props) {
           placeholder="What it's about (optional)"
           className="w-full resize-y rounded-xl border-2 border-[#dde3dd] bg-white px-4 py-2.5 text-[14px] outline-none transition-colors focus:border-[#b8beb8]"
         />
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <input
+            value={semester}
+            onChange={(e) => setSemester(e.target.value)}
+            placeholder="Semester (optional), e.g. Fall"
+            className="w-full rounded-xl border-2 border-[#dde3dd] bg-white px-4 py-2.5 text-[14px] outline-none transition-colors focus:border-[#b8beb8]"
+          />
+          <input
+            value={year}
+            onChange={(e) => setYear(e.target.value)}
+            placeholder="Year (optional), e.g. 2026"
+            className="w-full rounded-xl border-2 border-[#dde3dd] bg-white px-4 py-2.5 text-[14px] outline-none transition-colors focus:border-[#b8beb8]"
+          />
+        </div>
 
         <div>
           <label className="mb-1.5 block text-[12px] text-[#646464]">Card background</label>

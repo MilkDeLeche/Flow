@@ -23,7 +23,10 @@ alter table public.courses
   add column if not exists name text,
   add column if not exists description text not null default '',
   add column if not exists theme text not null default 'sage',
-  add column if not exists image_url text;
+  add column if not exists image_url text,
+  add column if not exists semester text not null default '',
+  add column if not exists year text not null default '',
+  add column if not exists finished_at timestamptz;
 
 update public.courses
 set name = coalesce(nullif(name, ''), 'Untitled course')
@@ -49,6 +52,9 @@ alter table public.materials
 
 create index if not exists materials_course_idx
   on public.materials (user_id, course_id, created_at);
+
+create index if not exists courses_finished_idx
+  on public.courses (user_id, finished_at, created_at);
 
 alter table public.attempts
   add column if not exists mode text not null default 'practice';

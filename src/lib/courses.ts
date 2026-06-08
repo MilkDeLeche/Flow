@@ -9,6 +9,9 @@ export interface Course {
   description: string;
   theme: string;
   imageUrl?: string;
+  semester?: string;
+  year?: string;
+  finishedAt?: string;
   createdAt: string;
   chapterCount: number;
 }
@@ -44,8 +47,33 @@ interface StoredCourse {
   description: string;
   theme: string;
   imageUrl?: string;
+  semester?: string;
+  year?: string;
+  finishedAt?: string;
   createdAt: string;
 }
+
+type CoursePatch = {
+  name?: string;
+  description?: string;
+  theme?: string;
+  imageUrl?: string | null;
+  semester?: string;
+  year?: string;
+  finishedAt?: string | null;
+};
+
+type CourseRow = {
+  id: string;
+  name: string;
+  description: string | null;
+  theme: string | null;
+  image_url?: string | null;
+  semester?: string | null;
+  year?: string | null;
+  finished_at?: string | null;
+  created_at: string;
+};
 
 export async function listCourses(): Promise<Course[]> {
   if (supabase) {
@@ -54,22 +82,13 @@ export async function listCourses(): Promise<Course[]> {
     let { data, error } = imageColumnKnownMissing
       ? await supabase
           .from('courses')
-          .select('id,name,description,theme,created_at')
+          .select('id,name,description,theme,semester,year,finished_at,created_at')
           .order('created_at', { ascending: false })
       : await supabase
       .from('courses')
-      .select('id,name,description,theme,image_url,created_at')
+      .select('id,name,description,theme,image_url,semester,year,finished_at,created_at')
       .order('created_at', { ascending: false });
-    let rows = data as
-      | Array<{
-          id: string;
-          name: string;
-          description: string | null;
-          theme: string | null;
-          image_url?: string | null;
-          created_at: string;
-        }>
-      | null;
+    let rows = data as CourseRow[] | null;
     if (data && imageColumnKnownMissing) {
       rows = data.map((c) => ({ ...c, image_url: null }));
     }
@@ -79,7 +98,13 @@ export async function listCourses(): Promise<Course[]> {
         .from('courses')
         .select('id,name,description,theme,created_at')
         .order('created_at', { ascending: false });
-      rows = fallback.data?.map((c) => ({ ...c, image_url: null })) ?? null;
+      rows = fallback.data?.map((c) => ({
+        ...c,
+        image_url: null,
+        semester: null,
+        year: null,
+        finished_at: null,
+      })) ?? null;
       error = fallback.error;
     }
     if (error || !rows) return [];
@@ -97,6 +122,9 @@ export async function listCourses(): Promise<Course[]> {
       description: c.description ?? '',
       theme: c.theme ?? DEFAULT_THEME,
       imageUrl: c.image_url ?? undefined,
+      semester: c.semester ?? undefined,
+      year: c.year ?? undefined,
+      finishedAt: c.finished_at ?? undefined,
       createdAt: c.created_at,
       chapterCount: counts.get(c.id) || 0,
     }));
@@ -116,16 +144,30 @@ export async function createCourse(input: {
   description?: string;
   theme?: string;
   imageUrl?: string;
+  semester?: string;
+  year?: string;
+  finishedAt?: string | null;
 }): Promise<Course> {
   const name = input.name.trim() || 'Untitled course';
   const description = (input.description ?? '').trim();
   const theme = input.theme ?? DEFAULT_THEME;
   const imageUrl = input.imageUrl?.trim() || undefined;
+  const semester = input.semester?.trim() || undefined;
+  const year = input.year?.trim() || undefined;
+  const finishedAt = input.finishedAt || undefined;
 
   if (supabase) {
     let { data, error } = await supabase
       .from('courses')
-      .insert({ name, description, theme, image_url: imageUrl ?? null })
+      .insert({
+        name,
+        description,
+        theme,
+        image_url: imageUrl ?? null,
+        semester: semester ?? null,
+        year: year ?? null,
+        finished_at: finishedAt ?? null,
+      })
       .select('id,created_at')
       .single();
     if (!error) lsSet(LS_IMAGE_COLUMN, 'present');
@@ -146,6 +188,9 @@ export async function createCourse(input: {
         description,
         theme,
         imageUrl,
+        semester,
+        year,
+        finishedAt,
         createdAt: data.created_at,
         chapterCount: 0,
       };
@@ -153,7 +198,17 @@ export async function createCourse(input: {
   }
 
   const id = uid();
-  const stored: StoredCourse = { id, name, description, theme, imageUrl, createdAt: nowIso() };
+  const stored: StoredCourse = {
+    id,
+    name,
+    description,
+    theme,
+    imageUrl,
+    semester,
+    year,
+    finishedAt,
+    createdAt: nowIso(),
+  };
   const list = lsGet<StoredCourse[]>(LS_COURSES, []);
   list.unshift(stored);
   lsSet(LS_COURSES, list);
@@ -162,13 +217,16 @@ export async function createCourse(input: {
 
 export async function updateCourse(
   id: string,
-  patch: { name?: string; description?: string; theme?: string; imageUrl?: string | null }
+  patch: CoursePatch
 ): Promise<void> {
   const clean: Record<string, string | null> = {};
   if (patch.name !== undefined) clean.name = patch.name.trim() || 'Untitled course';
   if (patch.description !== undefined) clean.description = patch.description.trim();
   if (patch.theme !== undefined) clean.theme = patch.theme;
   if (patch.imageUrl !== undefined) clean.imageUrl = patch.imageUrl?.trim() || null;
+  if (patch.semester !== undefined) clean.semester = patch.semester.trim();
+  if (patch.year !== undefined) clean.year = patch.year.trim();
+  if (patch.finishedAt !== undefined) clean.finishedAt = patch.finishedAt;
 
   if (supabase) {
     const dbClean: Record<string, string | null> = {};
@@ -176,6 +234,9 @@ export async function updateCourse(
     if (clean.description !== undefined) dbClean.description = clean.description;
     if (clean.theme !== undefined) dbClean.theme = clean.theme;
     if (clean.imageUrl !== undefined) dbClean.image_url = clean.imageUrl;
+    if (clean.semester !== undefined) dbClean.semester = clean.semester;
+    if (clean.year !== undefined) dbClean.year = clean.year;
+    if (clean.finishedAt !== undefined) dbClean.finished_at = clean.finishedAt;
     const { error } = await supabase.from('courses').update(dbClean).eq('id', id);
     if (!error && dbClean.image_url !== undefined) lsSet(LS_IMAGE_COLUMN, 'present');
     if (error && dbClean.image_url !== undefined) {
@@ -192,6 +253,7 @@ export async function updateCourse(
       if (c.id !== id) return c;
       const next = { ...c, ...clean };
       if (next.imageUrl === null) delete next.imageUrl;
+      if (next.finishedAt === null) delete next.finishedAt;
       return next;
     })
   );

@@ -61,6 +61,7 @@ Rules:
 - "explanations" has exactly 4 entries aligned to the options. For the correct one, say why it's right; for each wrong one, say specifically WHY it's wrong so the student learns. 1-3 sentences each.
 - "solution": for quantitative/math questions, a step-by-step worked solution (formula then steps). Use LaTeX for math: $...$ inline and $$...$$ for display equations. For purely conceptual questions, use an empty string "".
 - Cover the breadth of the material; some overlap across questions is fine for exam readiness.
+- Ignore footnotes, endnotes, bibliographies, citation lists, copyright text, page headers/footers, and source metadata unless the main body explicitly teaches that content.
 - Base everything strictly on the material; do not invent unsupported facts.`;
 }
 

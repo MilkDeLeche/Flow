@@ -17,7 +17,11 @@ function cleanLine(line: string): string {
   return line.replace(/\s+/g, ' ').trim();
 }
 
-export function inferChapterTitle(content: string, fallback = 'Untitled chapter'): string {
+export function inferChapterTitle(
+  content: string,
+  fallback = 'Untitled chapter',
+  useFirstSentence = true
+): string {
   const lines = content
     .split(/\r?\n/)
     .map(cleanLine)
@@ -27,9 +31,51 @@ export function inferChapterTitle(content: string, fallback = 'Untitled chapter'
   if (heading) return heading.replace(/^chapter\s*/i, 'Chapter ').slice(0, 80);
 
   const firstSentence = cleanLine(content).match(/^(.{16,90}?)([.!?]|$)/)?.[1];
-  if (firstSentence) return firstSentence.slice(0, 80);
+  if (useFirstSentence && firstSentence) return firstSentence.slice(0, 80);
 
   return fallback;
+}
+
+export function prepareStudyMaterial(content: string): string {
+  const lines = content.split(/\r?\n/);
+  const cleaned: string[] = [];
+  let inNotes = false;
+
+  for (const raw of lines) {
+    const line = raw.trim();
+    const startsNotes =
+      /^(footnotes?|endnotes?|references|bibliography|works cited|citations)\b[:\s-]*/i.test(
+        line
+      );
+
+    if (startsNotes) {
+      inNotes = true;
+      continue;
+    }
+
+    if (inNotes) {
+      const looksLikeNewSection =
+        line.length >= 4 &&
+        line.length <= 90 &&
+        HEADING_RE.test(line) &&
+        !/^(footnotes?|endnotes?|references|bibliography|works cited|citations)\b/i.test(
+          line
+        );
+      if (!looksLikeNewSection) continue;
+      inNotes = false;
+    }
+
+    const footnoteOnly =
+      /^(\[\d+\]|\d+\.|\d+\)|[*†‡])\s+.{0,240}$/u.test(line) &&
+      /(doi|isbn|http|www\.|press|journal|vol\.|pp\.|retrieved|accessed|university|copyright|©)/i.test(
+        line
+      );
+    if (footnoteOnly) continue;
+
+    cleaned.push(raw);
+  }
+
+  return cleaned.join('\n').replace(/\n{4,}/g, '\n\n\n').trim();
 }
 
 export function readingMinutes(content: string): number {

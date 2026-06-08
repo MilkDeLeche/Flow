@@ -37,6 +37,13 @@ function fmtDate(date: string): string {
   }
 }
 
+function localDateValue(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
 function readiness(plan: StudyPlan): number {
   const sessions = buildStudySessions(plan);
   if (!sessions.length) return plan.completedSessions.length ? 100 : 0;
@@ -53,6 +60,12 @@ export default function Dashboard({ onOpenCourse, refreshKey }: Props) {
   const [testDate, setTestDate] = useState(todayString());
   const [quizzesPerWeek, setQuizzesPerWeek] = useState(3);
   const [error, setError] = useState<string | null>(null);
+  const [visibleMonth, setVisibleMonth] = useState(() => {
+    const d = new Date();
+    d.setDate(1);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  });
 
   const reloadPlans = () => setPlans(listStudyPlans());
 
@@ -121,6 +134,33 @@ export default function Dashboard({ onOpenCourse, refreshKey }: Props) {
   const openPlanCourse = (plan: StudyPlan) => {
     const course = courses.find((c) => c.id === plan.courseId);
     if (course) onOpenCourse(course);
+  };
+  const monthCells = useMemo(() => {
+    const first = new Date(visibleMonth);
+    const start = new Date(first);
+    start.setDate(1 - first.getDay());
+    return Array.from({ length: 42 }, (_, i) => {
+      const date = new Date(start);
+      date.setDate(start.getDate() + i);
+      const value = localDateValue(date);
+      return {
+        date,
+        value,
+        inMonth: date.getMonth() === visibleMonth.getMonth(),
+        plans: plans.filter((plan) => plan.testDate === value),
+      };
+    });
+  }, [plans, visibleMonth]);
+  const monthLabel = visibleMonth.toLocaleDateString(undefined, {
+    month: 'long',
+    year: 'numeric',
+  });
+  const shiftMonth = (delta: number) => {
+    setVisibleMonth((current) => {
+      const next = new Date(current);
+      next.setMonth(current.getMonth() + delta);
+      return next;
+    });
   };
 
   return (
@@ -209,6 +249,68 @@ export default function Dashboard({ onOpenCourse, refreshKey }: Props) {
         </div>
         {error && <p className="mt-3 text-[13px] text-red-600">{error}</p>}
       </div>
+
+      <section className="mb-8 rounded-2xl border border-[#dde3dd] bg-white p-4">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <h2 className="text-[16px] font-semibold text-[#2c2c2c]">{monthLabel}</h2>
+          <div className="flex gap-2">
+            <button
+              onClick={() => shiftMonth(-1)}
+              className="h-9 rounded-full border-2 border-[#dde3dd] px-3 text-[13px] transition-colors hover:bg-[#eef1ed]"
+            >
+              Prev
+            </button>
+            <button
+              onClick={() => shiftMonth(1)}
+              className="h-9 rounded-full border-2 border-[#dde3dd] px-3 text-[13px] transition-colors hover:bg-[#eef1ed]"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+        <div className="grid grid-cols-7 gap-1 text-center text-[11px] font-medium uppercase text-[#8a8f8a]">
+          {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
+            <span key={day} className="py-1">
+              {day}
+            </span>
+          ))}
+        </div>
+        <div className="grid grid-cols-7 gap-1">
+          {monthCells.map((cell) => {
+            const selected = cell.value === testDate;
+            return (
+              <button
+                key={cell.value}
+                onClick={() => setTestDate(cell.value)}
+                className={`min-h-[72px] rounded-xl border p-2 text-left transition-colors ${
+                  selected
+                    ? 'border-black bg-[#f2f4ef]'
+                    : cell.inMonth
+                    ? 'border-[#e4e8e2] bg-white hover:bg-[#f7f8f5]'
+                    : 'border-[#edf0eb] bg-[#fbfcf8] text-[#b4b8b4]'
+                }`}
+              >
+                <span className="text-[12px] font-medium">{cell.date.getDate()}</span>
+                <span className="mt-1 block space-y-1">
+                  {cell.plans.slice(0, 2).map((plan) => (
+                    <span
+                      key={plan.id}
+                      className="block truncate rounded bg-[#eef1ed] px-1.5 py-0.5 text-[11px] text-[#2c2c2c]"
+                    >
+                      {plan.courseName}
+                    </span>
+                  ))}
+                  {cell.plans.length > 2 && (
+                    <span className="block text-[11px] text-[#646464]">
+                      +{cell.plans.length - 2}
+                    </span>
+                  )}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </section>
 
       {plans.length === 0 ? (
         <div className="rounded-2xl border-2 border-dashed border-[#dde3dd] px-5 py-10 text-center">
