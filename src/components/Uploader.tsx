@@ -11,6 +11,8 @@ const VISION_MAX_MB = 3;
 
 interface UploaderProps {
   allowUpload: boolean; // free tier is paste-text only
+  intent?: 'quiz' | 'chapter';
+  courseName?: string;
   onStart: (args: {
     title: string;
     material: string;
@@ -21,7 +23,12 @@ interface UploaderProps {
   }) => void;
 }
 
-export default function Uploader({ onStart, allowUpload }: UploaderProps) {
+export default function Uploader({
+  onStart,
+  allowUpload,
+  intent = 'quiz',
+  courseName,
+}: UploaderProps) {
   const { t } = useLocale();
   const [title, setTitle] = useState('');
   const [material, setMaterial] = useState('');
@@ -79,27 +86,34 @@ export default function Uploader({ onStart, allowUpload }: UploaderProps) {
   };
 
   const canStart = material.trim().length >= 40 || !!pdfBase64;
+  const isChapter = intent === 'chapter';
 
   return (
     <section className="max-w-[760px] mx-auto px-5 md:px-8 pt-10 md:pt-16 pb-16">
       <TextFade direction="up" staggerChildren={0.12}>
         <h1 className="font-mondwest text-[#2c2c2c] text-[34px] md:text-[52px] leading-[0.98] mb-4">
-          {t.uploadTitle}
+          {isChapter ? t.addChapterTitle : t.uploadTitle}
         </h1>
         <p className="text-[16px] md:text-[18px] text-[#444141] max-w-[560px] mb-8 leading-relaxed">
-          {t.uploadIntro}
+          {isChapter
+            ? t.addChapterIntro(courseName ?? t.allMaterial)
+            : t.uploadIntro}
         </p>
       </TextFade>
 
       <div className="space-y-5">
         <div>
           <label className="block text-[13px] text-[#646464] mb-2">
-            {t.nameMaterial}
+            {isChapter ? t.chapterTitleOptional : t.nameMaterial}
           </label>
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder={t.materialPlaceholder}
+            placeholder={
+              isChapter
+                ? t.chapterTitlePlaceholder
+                : t.materialPlaceholder
+            }
             className="w-full px-4 py-3 text-[15px] bg-white border-2 border-[#dde3dd] rounded-xl outline-none focus:border-[#b8beb8] transition-colors"
           />
         </div>
@@ -161,56 +175,60 @@ export default function Uploader({ onStart, allowUpload }: UploaderProps) {
           </p>
         )}
 
-        <div>
-          <label className="block text-[13px] text-[#646464] mb-2">
-            {t.startWith}
-          </label>
-          <div className="flex flex-wrap gap-2">
-            {ROUND_SIZES.map((n) => (
-              <button
-                key={n}
-                onClick={() => setRoundSize(n)}
-                className={`px-4 py-2 text-[14px] rounded-full border-2 transition-colors ${
-                  roundSize === n
-                    ? 'bg-black text-white border-black'
-                    : 'bg-white text-[#2c2c2c] border-[#dde3dd] hover:bg-[#eef1ed]'
-                }`}
-              >
-                {n} {t.questions}
-              </button>
-            ))}
+        {!isChapter && (
+          <div>
+            <label className="block text-[13px] text-[#646464] mb-2">
+              {t.startWith}
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {ROUND_SIZES.map((n) => (
+                <button
+                  key={n}
+                  onClick={() => setRoundSize(n)}
+                  className={`px-4 py-2 text-[14px] rounded-full border-2 transition-colors ${
+                    roundSize === n
+                      ? 'bg-black text-white border-black'
+                      : 'bg-white text-[#2c2c2c] border-[#dde3dd] hover:bg-[#eef1ed]'
+                  }`}
+                >
+                  {n} {t.questions}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
-        <div>
-          <label className="block text-[13px] text-[#646464] mb-2">{t.mode}</label>
-          <div className="flex flex-wrap gap-2">
-            {(
-              [
-                ['practice', t.practice, t.practiceHint],
-                ['exam', t.exam, t.examHint],
-              ] as const
-            ).map(([value, label, desc]) => (
-              <button
-                key={value}
-                onClick={() => setMode(value)}
-                title={desc}
-                className={`px-4 py-2 text-[14px] rounded-full border-2 transition-colors ${
-                  mode === value
-                    ? 'bg-black text-white border-black'
-                    : 'bg-white text-[#2c2c2c] border-[#dde3dd] hover:bg-[#eef1ed]'
-                }`}
-              >
-                {label}
-              </button>
-            ))}
+        {!isChapter && (
+          <div>
+            <label className="block text-[13px] text-[#646464] mb-2">{t.mode}</label>
+            <div className="flex flex-wrap gap-2">
+              {(
+                [
+                  ['practice', t.practice, t.practiceHint],
+                  ['exam', t.exam, t.examHint],
+                ] as const
+              ).map(([value, label, desc]) => (
+                <button
+                  key={value}
+                  onClick={() => setMode(value)}
+                  title={desc}
+                  className={`px-4 py-2 text-[14px] rounded-full border-2 transition-colors ${
+                    mode === value
+                      ? 'bg-black text-white border-black'
+                      : 'bg-white text-[#2c2c2c] border-[#dde3dd] hover:bg-[#eef1ed]'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            <p className="text-[12px] text-[#b4b8b4] mt-1.5">
+              {mode === 'practice'
+                ? t.practiceHint
+                : t.examHint}
+            </p>
           </div>
-          <p className="text-[12px] text-[#b4b8b4] mt-1.5">
-            {mode === 'practice'
-              ? t.practiceHint
-              : t.examHint}
-          </p>
-        </div>
+        )}
 
         {visionNote && (
           <p className="text-[13.5px] text-[#2c2c2c] bg-[#eef1ed] border border-[#dde3dd] rounded-lg px-4 py-3">
@@ -228,7 +246,7 @@ export default function Uploader({ onStart, allowUpload }: UploaderProps) {
           <button
             onClick={() =>
               onStart({
-                title: title.trim() || 'Untitled material',
+                title: title.trim(),
                 material,
                 sourceType,
                 roundSize,
@@ -239,7 +257,7 @@ export default function Uploader({ onStart, allowUpload }: UploaderProps) {
             disabled={!canStart}
             className="px-6 py-3 text-[15px] bg-black text-white rounded-full hover:bg-[#2c2c2c] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            {t.startQuiz(roundSize, mode)}
+            {isChapter ? t.saveChapter : t.startQuiz(roundSize, mode)}
           </button>
           {!canStart && (
             <span className="text-[13px] text-[#b4b8b4]">

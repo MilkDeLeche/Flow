@@ -1,15 +1,17 @@
 import { useEffect, useState } from 'react';
-import { ArrowLeft, Plus, Play, Target } from 'lucide-react';
+import { ArrowLeft, BookOpen, Plus, Play, Target } from 'lucide-react';
 import { themeGradient } from '../../lib/themes';
 import { listMaterialsByCourse, type RecentMaterial } from '../../lib/store';
 import { listAttemptsForMaterials, type Attempt } from '../../lib/history';
 import type { Course } from '../../lib/courses';
+import { useLocale } from '../../lib/i18n';
 
 interface Props {
   course: Course;
   refreshKey: number;
   onBack: () => void;
   onAddChapter: () => void;
+  onRead: (m: RecentMaterial) => void;
   onStudy: (m: RecentMaterial) => void;
   onReview: () => void;
 }
@@ -31,9 +33,11 @@ export default function CourseDetail({
   refreshKey,
   onBack,
   onAddChapter,
+  onRead,
   onStudy,
   onReview,
 }: Props) {
+  const { t } = useLocale();
   const [chapters, setChapters] = useState<RecentMaterial[]>([]);
   const [attempts, setAttempts] = useState<Attempt[]>([]);
 
@@ -59,10 +63,9 @@ export default function CourseDetail({
         onClick={onBack}
         className="mb-5 inline-flex items-center gap-1.5 text-[14px] text-[#646464] transition-colors hover:text-[#2c2c2c]"
       >
-        <ArrowLeft size={15} /> All courses
+        <ArrowLeft size={15} /> {t.allCourses}
       </button>
 
-      {/* Banner */}
       <div
         className="relative mb-6 overflow-hidden rounded-2xl p-6 text-white"
         style={
@@ -86,9 +89,8 @@ export default function CourseDetail({
             </p>
           )}
           <p className="mt-3 text-[12px] text-white/70">
-            {chapters.length} chapter{chapters.length === 1 ? '' : 's'} ·{' '}
-            {quizzes.length} quiz{quizzes.length === 1 ? '' : 'zes'} · {tests.length}{' '}
-            test{tests.length === 1 ? '' : 's'}
+            {chapters.length} {t.chapters.toLowerCase()} - {quizzes.length}{' '}
+            {t.quiz.toLowerCase()} - {tests.length} {t.test.toLowerCase()}
           </p>
         </div>
       </div>
@@ -98,57 +100,61 @@ export default function CourseDetail({
           onClick={onAddChapter}
           className="inline-flex items-center gap-2 rounded-full bg-black px-5 py-2.5 text-[14px] text-white transition-colors hover:bg-[#2c2c2c]"
         >
-          <Plus size={16} /> Add chapter
+          <Plus size={16} /> {t.addChapter}
         </button>
         <button
           onClick={onReview}
           className="inline-flex items-center gap-2 rounded-full border-2 border-[#dde3dd] bg-white px-5 py-2.5 text-[14px] transition-colors hover:bg-[#eef1ed]"
         >
-          <Target size={16} /> Review mistakes
+          <Target size={16} /> {t.reviewMistakes}
         </button>
       </div>
 
-      {/* Chapters */}
-      <h2 className="mb-3 text-[15px] font-medium text-[#2c2c2c]">Chapters & material</h2>
+      <h2 className="mb-3 text-[15px] font-medium text-[#2c2c2c]">{t.chapters}</h2>
       {chapters.length === 0 ? (
         <p className="mb-8 rounded-xl border-2 border-dashed border-[#dde3dd] px-4 py-6 text-center text-[14px] text-[#b4b8b4]">
-          No chapters yet. Add your first one to start quizzing.
+          {t.noChapters}
         </p>
       ) : (
         <ul className="mb-8 space-y-2">
           {chapters.map((m) => (
             <li
               key={m.id}
-              className="flex items-center gap-3 rounded-xl border border-[#e8e8e8] px-4 py-3"
+              className="flex flex-col gap-3 rounded-xl border border-[#e8e8e8] px-4 py-3 sm:flex-row sm:items-center"
             >
               <div className="min-w-0 flex-1">
                 <p className="truncate text-[14px] font-medium text-[#2c2c2c]">
                   {m.title}
                 </p>
                 <p className="text-[12px] text-[#646464]">
-                  Added {fmtDate(m.createdAt)}
+                  {t.addedDate(fmtDate(m.createdAt))}
                   {m.lastScore
-                    ? ` · last ${m.lastScore.score}/${m.lastScore.total}`
+                    ? ` - ${m.lastScore.score}/${m.lastScore.total}`
                     : ''}
                 </p>
               </div>
-              <button
-                onClick={() => onStudy(m)}
-                className="inline-flex items-center gap-1.5 rounded-full bg-black px-4 py-2 text-[13px] text-white transition-colors hover:bg-[#2c2c2c]"
-              >
-                <Play size={13} /> Study
-              </button>
+              <div className="flex shrink-0 flex-wrap items-center gap-2">
+                <button
+                  onClick={() => onRead(m)}
+                  className="inline-flex items-center gap-1.5 rounded-full border-2 border-[#dde3dd] bg-white px-4 py-2 text-[13px] transition-colors hover:bg-[#eef1ed]"
+                >
+                  <BookOpen size={13} /> {t.read}
+                </button>
+                <button
+                  onClick={() => onStudy(m)}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-black px-4 py-2 text-[13px] text-white transition-colors hover:bg-[#2c2c2c]"
+                >
+                  <Play size={13} /> {t.quiz}
+                </button>
+              </div>
             </li>
           ))}
         </ul>
       )}
 
-      {/* Quizzes & tests history */}
-      <h2 className="mb-3 text-[15px] font-medium text-[#2c2c2c]">Quizzes & tests</h2>
+      <h2 className="mb-3 text-[15px] font-medium text-[#2c2c2c]">{t.quizzesTests}</h2>
       {attempts.length === 0 ? (
-        <p className="text-[14px] text-[#b4b8b4]">
-          No attempts yet — they’ll show here once you take a quiz or an exam.
-        </p>
+        <p className="text-[14px] text-[#b4b8b4]">{t.noAttempts}</p>
       ) : (
         <ul className="space-y-2">
           {attempts.slice(0, 20).map((a) => (
@@ -161,7 +167,7 @@ export default function CourseDetail({
                   {a.material_title}
                 </p>
                 <p className="text-[12px] text-[#646464]">
-                  {a.mode === 'exam' ? 'Test' : 'Quiz'} · {fmtDate(a.created_at)}
+                  {a.mode === 'exam' ? t.test : t.quiz} - {fmtDate(a.created_at)}
                 </p>
               </div>
               <span className="shrink-0 text-[14px] font-medium text-[#2c2c2c]">

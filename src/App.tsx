@@ -11,6 +11,7 @@ import Landing from './components/landing/Landing';
 import CoursesHome from './components/dashboard/CoursesHome';
 import Dashboard from './components/dashboard/Dashboard';
 import CourseDetail from './components/dashboard/CourseDetail';
+import ChapterReader from './components/dashboard/ChapterReader';
 import Settings from './components/Settings';
 import { generateQuiz } from './lib/api';
 import { saveAttempt } from './lib/history';
@@ -18,6 +19,8 @@ import { supabase } from './lib/supabase';
 import { loadKeyStatus } from './lib/byok';
 import { useAuth } from './lib/useAuth';
 import { useLocale } from './lib/i18n';
+import { inferChapterTitle } from './lib/chapter';
+import { parseCourseFromInput } from './lib/parseCourse';
 import type { Course } from './lib/courses';
 import {
   addToBank,
@@ -42,6 +45,7 @@ type View =
   | 'home'
   | 'dashboard'
   | 'course'
+  | 'reader'
   | 'upload'
   | 'loading'
   | 'quiz'
@@ -75,6 +79,7 @@ export default function App() {
   const [currentCourse, setCurrentCourse] = useState<Course | null>(null);
   const [uploadCourseId, setUploadCourseId] = useState<string | null>(null);
   const [roundCourse, setRoundCourse] = useState<Course | null>(null);
+  const [readerMaterial, setReaderMaterial] = useState<RecentMaterial | null>(null);
 
   // Active material
   const [title, setTitle] = useState('');
@@ -162,6 +167,29 @@ export default function App() {
     }
   };
 
+  const resolveMaterialTitle = async (
+    rawTitle: string,
+    content: string,
+    pdf?: string
+  ) => {
+    const typed = rawTitle.trim();
+    if (typed) return typed;
+
+    if (byokActive) {
+      try {
+        const meta = await parseCourseFromInput({
+          text: content.slice(0, 12000),
+          pdfBase64: pdf,
+        });
+        if (meta.name.trim()) return meta.name.trim().slice(0, 80);
+      } catch {
+        // Fall back to local title inference when AI auto-fill is unavailable.
+      }
+    }
+
+    return inferChapterTitle(content, 'Untitled chapter');
+  };
+
   const handleStart = async (args: {
     title: string;
     material: string;
@@ -170,30 +198,57 @@ export default function App() {
     mode: QuizMode;
     pdfBase64?: string;
   }) => {
-    setTitle(args.title);
+    const finalTitle = await resolveMaterialTitle(
+      args.title,
+      args.material,
+      args.pdfBase64
+    );
+    setTitle(finalTitle);
     setMaterial(args.material);
     setMode(args.mode);
     setPdfBase64(args.pdfBase64);
     // Attach to a course when adding a chapter from inside one.
     setRoundCourse(uploadCourseId ? currentCourse : null);
     const id = await recordMaterial(
-      args.title,
+      finalTitle,
       args.material,
       args.sourceType,
       uploadCourseId ?? undefined
     );
     setMaterialId(id);
-    await runRound(args.roundSize, args.material, id, args.title, args.pdfBase64);
+    setRefreshKey((k) => k + 1);
+
+    if (uploadCourseId) {
+      const savedMaterial: RecentMaterial = {
+        id,
+        title: finalTitle,
+        content: args.material,
+        sourceType: args.sourceType,
+        createdAt: new Date().toISOString(),
+        courseId: uploadCourseId,
+      };
+      setReaderMaterial(savedMaterial);
+      setView('reader');
+      setUploadCourseId(null);
+      return;
+    }
+
+    await runRound(args.roundSize, args.material, id, finalTitle, args.pdfBase64);
   };
 
-  const handleResume = async (m: RecentMaterial, fromCourse: Course | null = null) => {
+  const handleResume = async (
+    m: RecentMaterial,
+    fromCourse: Course | null = null,
+    size: RoundSize = 10,
+    quizMode: QuizMode = 'practice'
+  ) => {
     setTitle(m.title);
     setMaterial(m.content);
     setMaterialId(m.id);
-    setMode('practice');
+    setMode(quizMode);
     setPdfBase64(undefined);
     setRoundCourse(fromCourse);
-    await runRound(10, m.content, m.id, m.title);
+    await runRound(size, m.content, m.id, m.title);
   };
 
   const startReview = (missed: MissedQuestion[]) => {
@@ -329,8 +384,24 @@ export default function App() {
               setUploadCourseId(currentCourse.id);
               setView('upload');
             }}
+            onRead={(m) => {
+              setReaderMaterial(m);
+              setView('reader');
+            }}
             onStudy={(m) => handleResume(m, currentCourse)}
             onReview={() => setView('review')}
+          />
+        )}
+
+        {view === 'reader' && readerMaterial && (
+          <ChapterReader
+            course={currentCourse}
+            material={readerMaterial}
+            onBack={() => setView(currentCourse ? 'course' : 'home')}
+            onReview={() => setView('review')}
+            onStartQuiz={(size, quizMode) =>
+              handleResume(readerMaterial, currentCourse, size, quizMode)
+            }
           />
         )}
 
@@ -347,7 +418,12 @@ export default function App() {
                 {t.addChapterTo} <b className="text-[#2c2c2c]">{currentCourse.name}</b>
               </p>
             )}
-            <Uploader onStart={handleStart} allowUpload={byokActive} />
+            <Uploader
+              onStart={handleStart}
+              allowUpload={byokActive}
+              intent={uploadCourseId ? 'chapter' : 'quiz'}
+              courseName={currentCourse?.name}
+            />
           </div>
         )}
 
