@@ -80,6 +80,7 @@ export default function App() {
   const [uploadCourseId, setUploadCourseId] = useState<string | null>(null);
   const [roundCourse, setRoundCourse] = useState<Course | null>(null);
   const [readerMaterial, setReaderMaterial] = useState<RecentMaterial | null>(null);
+  const [readerFocusId, setReaderFocusId] = useState<string | undefined>();
 
   // Active material
   const [title, setTitle] = useState('');
@@ -385,6 +386,7 @@ export default function App() {
             }}
             onRead={(m) => {
               setReaderMaterial(m);
+              setReaderFocusId(undefined);
               setView('reader');
             }}
             onStudy={(m) => handleResume(m, currentCourse)}
@@ -396,6 +398,7 @@ export default function App() {
           <ChapterReader
             course={currentCourse}
             material={readerMaterial}
+            focusSectionId={readerFocusId}
             onBack={() => setView(currentCourse ? 'course' : 'home')}
             onReview={() => setView('review')}
             onStartQuiz={(size, quizMode) =>
@@ -467,6 +470,20 @@ export default function App() {
             title={title}
             questions={questions}
             mode={mode}
+            material={material}
+            onOpenSource={(sectionId) => {
+              setReaderMaterial({
+                id: materialId,
+                title,
+                content: material,
+                sourceType: 'text',
+                createdAt: new Date().toISOString(),
+                courseId: roundCourse?.id,
+              });
+              setCurrentCourse(roundCourse);
+              setReaderFocusId(sectionId);
+              setView('reader');
+            }}
             onFinish={handleFinish}
             onQuit={() => setView(afterQuizView())}
           />

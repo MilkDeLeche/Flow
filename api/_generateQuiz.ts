@@ -54,7 +54,8 @@ function systemPrompt(count: number): string {
 Write exactly ${count} multiple-choice questions based ONLY on the provided material.
 
 Rules:
-- Detect the language of the material and write every question, option, and explanation in that SAME language.
+- Detect the language, script, and dialect/register of the material and write every question, option, explanation, and solution in that SAME language.
+- If the material intentionally mixes languages, use the dominant study language while preserving original technical terms, names, and quoted phrases.
 - Each question has exactly 4 options; exactly one is correct. Vary the position of the correct answer.
 - "correctIndex" is the 0-based index (0-3) of the correct option.
 - "explanations" has exactly 4 entries aligned to the options. For the correct one, say why it's right; for each wrong one, say specifically WHY it's wrong so the student learns. 1-3 sentences each.

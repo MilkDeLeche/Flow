@@ -25,7 +25,7 @@ const SYSTEM = `You name a student's course/class from their material (a syllabu
 Return ONLY JSON: {"name": string, "description": string}.
 - "name": a short course/class title, max 60 characters (e.g. "Biology 101 — Cell Biology", "Economía: Microeconomía").
 - "description": one sentence on what the course covers, max 160 characters.
-- Write both in the SAME language as the material. No markdown, no extra keys.`;
+- Write both in the SAME language, script, and register as the material. If the material mixes languages, use the dominant study language and preserve original technical terms. No markdown, no extra keys.`;
 
 const ASK = 'Name this course and describe what it covers, as JSON.';
 

@@ -4,6 +4,12 @@ export interface ChapterSection {
   body: string;
 }
 
+export interface SourceMatch {
+  sectionId: string;
+  sectionTitle: string;
+  excerpt: string;
+}
+
 const HEADING_RE =
   /^(chapter\s+\d+|unit\s+\d+|section\s+\d+|\d+(\.\d+)*\s+|[A-Z][A-Z0-9\s:,-]{8,})/i;
 
@@ -92,4 +98,69 @@ export function splitChapterSections(content: string): ChapterSection[] {
     });
   }
   return grouped.slice(0, 18);
+}
+
+function words(value: string): string[] {
+  const rawTerms = value.toLowerCase().match(/[\p{L}\p{N}]+/gu) || [];
+  const terms: string[] = [];
+
+  for (const term of rawTerms) {
+    const compactScript = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u.test(
+      term
+    );
+    if (term.length > 3 || (compactScript && term.length >= 2)) terms.push(term);
+
+    if (compactScript && term.length > 3) {
+      for (let i = 0; i < term.length - 1; i += 1) {
+        terms.push(term.slice(i, i + 2));
+      }
+    }
+  }
+
+  return terms;
+}
+
+function excerptAround(body: string, terms: string[]): string {
+  const compact = cleanLine(body);
+  if (compact.length <= 340) return compact;
+
+  const lower = compact.toLowerCase();
+  const firstHit = terms
+    .map((term) => lower.indexOf(term))
+    .filter((index) => index >= 0)
+    .sort((a, b) => a - b)[0];
+  const start = Math.max(0, (firstHit ?? 0) - 110);
+  const end = Math.min(compact.length, start + 320);
+  const prefix = start > 0 ? '...' : '';
+  const suffix = end < compact.length ? '...' : '';
+  return `${prefix}${compact.slice(start, end).trim()}${suffix}`;
+}
+
+export function findQuestionSource(
+  question: string,
+  content: string
+): SourceMatch | null {
+  const sections = splitChapterSections(content);
+  const terms = Array.from(new Set(words(question))).slice(0, 12);
+  if (!sections.length || !terms.length) return null;
+
+  const ranked = sections
+    .map((section) => {
+      const haystack = `${section.title} ${section.body}`.toLowerCase();
+      const score = terms.reduce(
+        (total, term) => total + (haystack.includes(term) ? 1 : 0),
+        0
+      );
+      return { section, score };
+    })
+    .sort((a, b) => b.score - a.score);
+
+  const best = ranked[0];
+  if (!best || best.score === 0) return null;
+
+  return {
+    sectionId: best.section.id,
+    sectionTitle: best.section.title,
+    excerpt: excerptAround(best.section.body, terms),
+  };
 }

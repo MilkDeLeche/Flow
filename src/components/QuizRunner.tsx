@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Check, X, ArrowRight } from 'lucide-react';
+import { Check, X, ArrowRight, BookOpen, ExternalLink } from 'lucide-react';
 import MathText from './MathText';
+import { findQuestionSource } from '../lib/chapter';
 import { useLocale } from '../lib/i18n';
 import type { AnswerRecord, QuizMode, QuizQuestion } from '../lib/types';
 
@@ -8,6 +9,8 @@ interface QuizRunnerProps {
   title: string;
   questions: QuizQuestion[];
   mode: QuizMode;
+  material?: string;
+  onOpenSource?: (sectionId?: string) => void;
   onFinish: (answers: AnswerRecord[]) => void;
   onQuit: () => void;
 }
@@ -16,6 +19,8 @@ export default function QuizRunner({
   title,
   questions,
   mode,
+  material,
+  onOpenSource,
   onFinish,
   onQuit,
 }: QuizRunnerProps) {
@@ -54,9 +59,10 @@ export default function QuizRunner({
 
   const correctSoFar = answers.filter((a) => a.correct).length;
   const progress = ((index + (chosen !== null ? 1 : 0)) / questions.length) * 100;
+  const source = material ? findQuestionSource(q.question, material) : null;
 
   return (
-    <section className="max-w-[760px] mx-auto px-5 md:px-8 pt-8 pb-16">
+    <section className="mx-auto max-w-[860px] px-5 pb-16 pt-8 md:px-8">
       <div className="flex items-center justify-between mb-3">
         <div className="min-w-0">
           <p className="text-[13px] text-[#b4b8b4] truncate">
@@ -86,6 +92,31 @@ export default function QuizRunner({
       <h2 className="font-mondwest text-[#2c2c2c] text-[24px] md:text-[30px] leading-[1.15] mb-6">
         <MathText text={q.question} />
       </h2>
+
+      {source && (
+        <div className="mb-6 rounded-xl border border-[#d7ddd4] bg-[#f6f8f3] px-4 py-3">
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+            <p className="inline-flex items-center gap-2 text-[12px] font-medium uppercase text-[#646464]">
+              <BookOpen size={14} /> {t.sourceContext}
+            </p>
+            {onOpenSource && (
+              <button
+                onClick={() => onOpenSource(source.sectionId)}
+                className="inline-flex items-center gap-1.5 rounded-full border border-[#cfd7ca] bg-white px-3 py-1.5 text-[12px] text-[#2c2c2c] transition-colors hover:bg-[#eef1ed]"
+              >
+                {t.openInChapter}
+                <ExternalLink size={12} />
+              </button>
+            )}
+          </div>
+          <p className="mb-1 text-[13px] font-medium text-[#2c2c2c]">
+            {source.sectionTitle}
+          </p>
+          <p className="text-[13px] leading-relaxed text-[#555b55]">
+            {source.excerpt}
+          </p>
+        </div>
+      )}
 
       <div className="space-y-3">
         {q.options.map((opt, i) => {
