@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Check, X, ArrowRight } from 'lucide-react';
 import MathText from './MathText';
+import { useLocale } from '../lib/i18n';
 import type { AnswerRecord, QuizMode, QuizQuestion } from '../lib/types';
 
 interface QuizRunnerProps {
@@ -18,6 +19,7 @@ export default function QuizRunner({
   onFinish,
   onQuit,
 }: QuizRunnerProps) {
+  const { t } = useLocale();
   const [index, setIndex] = useState(0);
   const [chosen, setChosen] = useState<number | null>(null);
   const [answers, setAnswers] = useState<AnswerRecord[]>([]);
@@ -60,18 +62,18 @@ export default function QuizRunner({
           <p className="text-[13px] text-[#b4b8b4] truncate">
             {title}
             <span className="ml-2 uppercase tracking-wide text-[11px]">
-              · {isExam ? 'Exam' : 'Practice'}
+              · {isExam ? t.exam : t.practice}
             </span>
           </p>
           <p className="text-[15px] text-[#2c2c2c]">
-            Question {index + 1} of {questions.length}
+            {t.questionOf(index + 1, questions.length)}
           </p>
         </div>
         <button
           onClick={onQuit}
           className="text-[13px] text-[#646464] hover:text-[#2c2c2c] transition-colors shrink-0 ml-4"
         >
-          Quit
+          {t.quit}
         </button>
       </div>
       <div className="h-1.5 w-full bg-[#eef1ed] rounded-full overflow-hidden mb-8">
@@ -143,7 +145,7 @@ export default function QuizRunner({
       {revealed && q.solution && q.solution.trim() && (
         <div className="mt-5 ml-9 rounded-xl border border-[#dde3dd] bg-[#f7f9f6] px-4 py-3">
           <p className="text-[12px] uppercase tracking-wide text-[#b4b8b4] mb-1">
-            Worked solution
+            {t.workedSolution}
           </p>
           <div className="text-[13.5px] text-[#2c2c2c] leading-relaxed">
             <MathText text={q.solution} />
@@ -154,15 +156,15 @@ export default function QuizRunner({
       <div className="flex items-center justify-between mt-8">
         <span className="text-[14px] text-[#646464]">
           {isExam
-            ? `${answers.length}/${questions.length} answered`
-            : `Score: ${correctSoFar}/${answers.length}`}
+            ? t.answered(answers.length, questions.length)
+            : t.score(correctSoFar, answers.length)}
         </span>
         <button
           onClick={next}
           disabled={chosen === null}
           className="inline-flex items-center gap-2 px-5 py-3 text-[15px] bg-black text-white rounded-full hover:bg-[#2c2c2c] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          {isLast ? 'See results' : isExam ? 'Next' : 'Next question'}
+          {isLast ? t.seeResults : isExam ? t.next : t.nextQuestion}
           <ArrowRight size={16} />
         </button>
       </div>

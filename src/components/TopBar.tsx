@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useLocale } from '../lib/i18n';
 
 type View = 'home' | 'history' | 'review' | 'dashboard' | 'settings';
 
@@ -19,6 +20,7 @@ export default function TopBar({
   missedCount,
   onChangeUser,
 }: TopBarProps) {
+  const { t } = useLocale();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(userName);
 
@@ -58,14 +60,14 @@ export default function TopBar({
         </button>
 
         <nav className="flex items-center gap-1.5 md:gap-2">
-          {navBtn('home', 'Study')}
-          {navBtn('review', 'Review', missedCount)}
-          {navBtn('history', 'History')}
+          {navBtn('home', t.study)}
+          {navBtn('review', t.review, missedCount)}
+          {navBtn('history', t.history)}
 
           {authed ? (
             <>
-              {navBtn('dashboard', 'Dashboard')}
-              {navBtn('settings', 'Settings')}
+              {navBtn('dashboard', t.dashboard)}
+              {navBtn('settings', t.settings)}
             </>
           ) : editing ? (
             <input
@@ -75,12 +77,12 @@ export default function TopBar({
               onBlur={commit}
               onKeyDown={(e) => e.key === 'Enter' && commit()}
               className="w-28 px-3 py-2 text-[14px] bg-white border-2 border-[#dde3dd] rounded-full outline-none focus:border-[#b8beb8]"
-              placeholder="Your name"
+              placeholder={t.yourName}
             />
           ) : (
             <button
               onClick={() => setEditing(true)}
-              title="Change who's studying"
+              title={t.changeStudent}
               className="px-4 py-2 text-[14px] bg-black text-white rounded-full hover:bg-[#2c2c2c] transition-colors"
             >
               {userName}

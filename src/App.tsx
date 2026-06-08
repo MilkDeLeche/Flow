@@ -17,6 +17,7 @@ import { saveAttempt } from './lib/history';
 import { supabase } from './lib/supabase';
 import { loadKeyStatus } from './lib/byok';
 import { useAuth } from './lib/useAuth';
+import { useLocale } from './lib/i18n';
 import type { Course } from './lib/courses';
 import {
   addToBank,
@@ -61,6 +62,7 @@ function shuffle<T>(arr: T[]): T[] {
 }
 
 export default function App() {
+  const { t } = useLocale();
   const { session, loading: authLoading, authRequired } = useAuth();
 
   // Top-level screen: the Flow landing page (front door) vs. the quiz app.
@@ -199,7 +201,7 @@ export default function App() {
     setReviewMissed(missed);
     setIsReview(true);
     setMode('practice');
-    setTitle('Review · your mistakes');
+    setTitle(t.review);
     setQuestions(missed.map((m) => m.question));
     setAnswers([]);
     setView('quiz');
@@ -338,11 +340,11 @@ export default function App() {
               onClick={() => setView(uploadCourseId ? 'course' : 'home')}
               className="inline-flex items-center gap-1.5 text-[14px] text-[#646464] transition-colors hover:text-[#2c2c2c]"
             >
-              <ArrowLeft size={15} /> {uploadCourseId ? 'Back to course' : 'Back'}
+              <ArrowLeft size={15} /> {uploadCourseId ? t.backToCourse : t.back}
             </button>
             {uploadCourseId && currentCourse && (
               <p className="mt-3 text-[13px] text-[#646464]">
-                Adding a chapter to <b className="text-[#2c2c2c]">{currentCourse.name}</b>
+                {t.addChapterTo} <b className="text-[#2c2c2c]">{currentCourse.name}</b>
               </p>
             )}
             <Uploader onStart={handleStart} allowUpload={byokActive} />
@@ -363,23 +365,22 @@ export default function App() {
                     }
                     className="px-5 py-3 text-[15px] bg-black text-white rounded-full hover:bg-[#2c2c2c] transition-colors"
                   >
-                    Try again
+                    {t.tryAgain}
                   </button>
                   <button
                     onClick={() => setView(roundCourse ? 'course' : 'home')}
                     className="px-5 py-3 text-[15px] bg-white border-2 border-[#dde3dd] rounded-full hover:bg-[#eef1ed] transition-colors"
                   >
-                    Back
+                    {t.back}
                   </button>
                 </div>
               </>
             ) : (
               <div className="flex flex-col items-center gap-4 text-[#646464]">
                 <Loader2 size={28} className="animate-spin" />
-                <p className="text-[16px]">Building your {roundSize}-question quiz…</p>
+                <p className="text-[16px]">{t.loadingQuiz(roundSize)}</p>
                 <p className="text-[13px] text-[#b4b8b4]">
-                  Reading the material and writing explanations. Future rounds of
-                  this material are served from the cache — no waiting.
+                  {t.loadingQuizHint}
                 </p>
               </div>
             )}

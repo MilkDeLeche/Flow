@@ -1,4 +1,5 @@
 import TextFade from '../TextFade';
+import { useLocale } from '../../lib/i18n';
 
 interface Props {
   onEnter: () => void;
@@ -9,6 +10,7 @@ interface Props {
  * Reveals with the shared TextFade.
  */
 export default function Hero({ onEnter }: Props) {
+  const { t } = useLocale();
   return (
     <section
       id="home"
@@ -16,20 +18,17 @@ export default function Hero({ onEnter }: Props) {
     >
       <TextFade direction="up" staggerChildren={0.15}>
         <h1 className="max-w-[900px] font-mondwest text-[32px] leading-[0.95] md:text-[50px] lg:max-w-[760px] lg:text-[70px]">
-          Turn any chapter into a quiz that teaches you
+          {t.heroTitle}
         </h1>
         <p className="mt-6 max-w-[620px] text-[17px] text-[#444141] lg:max-w-[540px] lg:text-[18px]">
-          Paste a chapter, drop a PDF, or upload your slides. Flow writes
-          progressive practice rounds (10, 20, 30, 40, 50 questions) and
-          explains <em>why</em> every wrong answer is wrong, in the language of
-          your material.
+          {t.heroBody}
         </p>
         <div className="mt-8 flex flex-wrap items-center gap-3">
           <button
             onClick={onEnter}
             className="inline-flex items-center gap-2 rounded-full bg-black px-5 py-3 text-[15px] text-white transition-colors hover:bg-[#2c2c2c]"
           >
-            Start studying
+            {t.startStudying}
             <svg
               width="16"
               height="16"
@@ -48,7 +47,7 @@ export default function Hero({ onEnter }: Props) {
             href="#demo"
             className="inline-flex items-center gap-2 rounded-full border-2 border-[#dde3dd] bg-white px-5 py-3 text-[15px] transition-colors hover:bg-[#eef1ed]"
           >
-            See how it works
+            {t.seeHow}
           </a>
         </div>
       </TextFade>

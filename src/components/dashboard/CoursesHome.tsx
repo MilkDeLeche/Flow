@@ -4,6 +4,7 @@ import CourseCard from './CourseCard';
 import JumpBackIn from '../JumpBackIn';
 import TextFade from '../TextFade';
 import { listCourses, type Course } from '../../lib/courses';
+import { useLocale } from '../../lib/i18n';
 import type { RecentMaterial } from '../../lib/store';
 
 interface Props {
@@ -22,6 +23,7 @@ export default function CoursesHome({
   onQuickQuiz,
   onResume,
 }: Props) {
+  const { t } = useLocale();
   const [courses, setCourses] = useState<Course[]>([]);
   const [loaded, setLoaded] = useState(false);
 
@@ -42,10 +44,10 @@ export default function CoursesHome({
     <div className="mx-auto max-w-[1000px] px-5 pb-16 pt-10 md:px-8">
       <TextFade direction="up">
         <h1 className="mb-2 font-mondwest text-[34px] leading-[0.98] md:text-[48px]">
-          Your courses
+          {t.yourCourses}
         </h1>
         <p className="mb-8 text-[15px] text-[#646464] md:text-[16px]">
-          Pick a class to study, or start a quick one-off quiz.
+          {t.coursesIntro}
         </p>
       </TextFade>
 
@@ -58,13 +60,13 @@ export default function CoursesHome({
           className="flex h-[200px] flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-[#dde3dd] text-[#646464] transition-colors hover:border-[#b8beb8] hover:bg-[#eef1ed]"
         >
           <Plus size={22} />
-          <span className="text-[14px]">New course</span>
+          <span className="text-[14px]">{t.newCourse}</span>
         </button>
       </div>
 
       {loaded && courses.length === 0 && (
         <p className="mt-4 text-[14px] text-[#b4b8b4]">
-          No courses yet — create one to organize your chapters, quizzes, and tests.
+          {t.noCourses}
         </p>
       )}
 
@@ -73,7 +75,7 @@ export default function CoursesHome({
           onClick={onQuickQuiz}
           className="text-[14px] text-[#646464] underline-offset-2 transition-colors hover:text-[#2c2c2c] hover:underline"
         >
-          or take a quick quiz without a course →
+          {t.quickQuiz}
         </button>
       </div>
 

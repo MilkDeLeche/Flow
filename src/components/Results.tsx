@@ -1,6 +1,7 @@
 import { Check, X, RotateCcw, ArrowUpRight, FilePlus2 } from 'lucide-react';
 import TextFade from './TextFade';
 import MathText from './MathText';
+import { useLocale } from '../lib/i18n';
 import { ROUND_SIZES, type AnswerRecord, type QuizQuestion, type RoundSize } from '../lib/types';
 
 interface ResultsProps {
@@ -25,6 +26,7 @@ export default function Results({
   onRetake,
   onNewMaterial,
 }: ResultsProps) {
+  const { t } = useLocale();
   const score = answers.filter((a) => a.correct).length;
   const total = questions.length;
   const pct = Math.round((score / total) * 100);
@@ -38,7 +40,7 @@ export default function Results({
   const byQuestion = new Map(answers.map((a) => [a.questionIndex, a]));
 
   const verdict =
-    pct >= 90 ? 'Exam-ready' : pct >= 70 ? 'Almost there' : 'Keep drilling';
+    pct >= 90 ? t.examReady : pct >= 70 ? t.almostThere : t.keepDrilling;
 
   return (
     <section className="max-w-[760px] mx-auto px-5 md:px-8 pt-10 pb-16">
@@ -60,13 +62,13 @@ export default function Results({
             className="inline-flex items-center gap-2 px-5 py-3 text-[15px] bg-black text-white rounded-full hover:bg-[#2c2c2c] transition-colors"
           >
             <RotateCcw size={16} />
-            Drill remaining mistakes
+            {t.drillMistakes}
           </button>
           <button
             onClick={onNewMaterial}
             className="inline-flex items-center gap-2 px-5 py-3 text-[15px] bg-white border-2 border-[#dde3dd] rounded-full hover:bg-[#eef1ed] transition-colors"
           >
-            Done
+            {t.done}
           </button>
         </div>
       ) : (
@@ -78,7 +80,7 @@ export default function Results({
             onClick={() => onRound(nextSize)}
             className="inline-flex items-center gap-2 px-5 py-3 text-[15px] bg-black text-white rounded-full hover:bg-[#2c2c2c] transition-colors"
           >
-            Next round: {nextSize} questions
+            {t.nextRound(nextSize)}
             <ArrowUpRight size={16} />
           </button>
         ) : (
@@ -86,7 +88,7 @@ export default function Results({
             onClick={() => onRound(50)}
             className="inline-flex items-center gap-2 px-5 py-3 text-[15px] bg-black text-white rounded-full hover:bg-[#2c2c2c] transition-colors"
           >
-            Another 50 — full drill
+            {t.another50}
             <ArrowUpRight size={16} />
           </button>
         )}
@@ -95,20 +97,20 @@ export default function Results({
           className="inline-flex items-center gap-2 px-5 py-3 text-[15px] bg-white border-2 border-[#dde3dd] rounded-full hover:bg-[#eef1ed] transition-colors"
         >
           <RotateCcw size={16} />
-          Retake {roundSize}
+          {t.retake(roundSize)}
         </button>
         <button
           onClick={onNewMaterial}
           className="inline-flex items-center gap-2 px-5 py-3 text-[15px] bg-white border-2 border-[#dde3dd] rounded-full hover:bg-[#eef1ed] transition-colors"
         >
           <FilePlus2 size={16} />
-          New material
+          {t.newMaterial}
         </button>
       </div>
 
       {/* Other round sizes */}
       <div className="mb-12">
-        <p className="text-[13px] text-[#646464] mb-2">Jump to a round size</p>
+        <p className="text-[13px] text-[#646464] mb-2">{t.jumpRound}</p>
         <div className="flex flex-wrap gap-2">
           {ROUND_SIZES.map((n) => (
             <button
@@ -130,7 +132,7 @@ export default function Results({
 
       {/* Review */}
       <h2 className="font-mondwest text-[#2c2c2c] text-[24px] md:text-[28px] mb-5">
-        Review
+        {t.review}
       </h2>
       <div className="space-y-6">
         {questions.map((q, qi) => {
@@ -174,7 +176,7 @@ export default function Results({
                       >
                         {String.fromCharCode(65 + oi)}. <MathText text={opt} />
                         {isCorrect && ' ✓'}
-                        {isChosen && !isCorrect && ' ✗ (your answer)'}
+                        {isChosen && !isCorrect && ` ✗ (${t.yourAnswer})`}
                       </span>
                       {(isCorrect || isChosen) && (
                         <p
@@ -193,7 +195,7 @@ export default function Results({
               {q.solution && q.solution.trim() && (
                 <div className="ml-7 mt-3 rounded-xl border border-[#dde3dd] bg-[#f7f9f6] px-4 py-3">
                   <p className="text-[11px] uppercase tracking-wide text-[#b4b8b4] mb-1">
-                    Worked solution
+                    {t.workedSolution}
                   </p>
                   <div className="text-[13px] text-[#2c2c2c] leading-relaxed">
                     <MathText text={q.solution} />

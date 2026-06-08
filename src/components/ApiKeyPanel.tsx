@@ -12,6 +12,7 @@ import {
   type KeyStatus,
 } from '../lib/byok';
 import { supabaseEnabled } from '../lib/supabase';
+import { useLocale } from '../lib/i18n';
 
 interface ApiKeyPanelProps {
   onChange?: () => void;
@@ -24,6 +25,7 @@ const PROVIDERS: Provider[] = ['anthropic', 'openai', 'gemini'];
 const stored = supabaseEnabled && !import.meta.env.DEV;
 
 export default function ApiKeyPanel({ onChange }: ApiKeyPanelProps) {
+  const { t } = useLocale();
   const [status, setStatus] = useState<KeyStatus>({ configured: false });
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -88,7 +90,7 @@ export default function ApiKeyPanel({ onChange }: ApiKeyPanelProps) {
           <div>
             <h3 className="text-[15px] font-medium text-[#2c2c2c] flex items-center gap-2">
               <Key size={16} />
-              {active ? 'Using your own key' : 'Free tier'}
+              {active ? t.apiActive : t.freeTier}
             </h3>
             <p className="text-[13px] text-[#646464] mt-1 leading-relaxed max-w-[540px]">
               {active ? (
@@ -116,7 +118,7 @@ export default function ApiKeyPanel({ onChange }: ApiKeyPanelProps) {
           </div>
           {active && (
             <span className="inline-flex items-center gap-1.5 text-[12px] text-green-700 bg-green-50 border border-green-200 rounded-full px-2.5 py-1 shrink-0">
-              <Check size={13} /> Active
+              <Check size={13} /> {t.active}
             </span>
           )}
         </div>
@@ -136,14 +138,14 @@ export default function ApiKeyPanel({ onChange }: ApiKeyPanelProps) {
               }}
               className="text-[13px] text-[#646464] hover:text-[#2c2c2c] transition-colors"
             >
-              Change
+              {t.change}
             </button>
             <button
               onClick={remove}
               disabled={busy}
               className="inline-flex items-center gap-1.5 text-[13px] text-red-600 hover:text-red-700 transition-colors disabled:opacity-60"
             >
-              <Trash2 size={14} /> Remove
+              <Trash2 size={14} /> {t.remove}
             </button>
           </div>
         ) : open ? (
@@ -166,7 +168,7 @@ export default function ApiKeyPanel({ onChange }: ApiKeyPanelProps) {
 
             <div>
               <label className="block text-[12px] text-[#646464] mb-1">
-                Model (cheaper = saves money)
+                {t.modelCheap}
               </label>
               <select
                 value={model}
@@ -197,7 +199,7 @@ export default function ApiKeyPanel({ onChange }: ApiKeyPanelProps) {
                 className="inline-flex items-center gap-2 px-4 py-2 text-[14px] bg-black text-white rounded-full hover:bg-[#2c2c2c] transition-colors disabled:opacity-60"
               >
                 {busy && <Loader2 size={14} className="animate-spin" />}
-                Save key
+                {t.saveKey}
               </button>
               <button
                 onClick={() => {
@@ -206,7 +208,7 @@ export default function ApiKeyPanel({ onChange }: ApiKeyPanelProps) {
                 }}
                 className="px-4 py-2 text-[14px] text-[#646464] hover:text-[#2c2c2c] transition-colors"
               >
-                Cancel
+                {t.cancel}
               </button>
             </div>
           </div>
@@ -215,7 +217,7 @@ export default function ApiKeyPanel({ onChange }: ApiKeyPanelProps) {
             onClick={() => setOpen(true)}
             className="mt-4 px-4 py-2 text-[14px] bg-white border-2 border-[#dde3dd] rounded-full hover:bg-[#eef1ed] transition-colors"
           >
-            Add your API key
+            {t.addKey}
           </button>
         )}
       </div>
