@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Plus } from 'lucide-react';
 import CourseCard from './CourseCard';
+import AddCourseForm from './AddCourseForm';
 import JumpBackIn from '../JumpBackIn';
 import TextFade from '../TextFade';
 import { listCourses, type Course } from '../../lib/courses';
@@ -9,8 +10,9 @@ import type { RecentMaterial } from '../../lib/store';
 
 interface Props {
   refreshKey: number;
+  byokActive: boolean;
   onOpenCourse: (c: Course) => void;
-  onNewCourse: () => void;
+  onChanged: () => void;
   onQuickQuiz: () => void;
   onResume: (m: RecentMaterial) => void;
 }
@@ -18,14 +20,22 @@ interface Props {
 /** Signed-in home: the landing layout, personalized to the user's courses. */
 export default function CoursesHome({
   refreshKey,
+  byokActive,
   onOpenCourse,
-  onNewCourse,
+  onChanged,
   onQuickQuiz,
   onResume,
 }: Props) {
   const { t } = useLocale();
   const [courses, setCourses] = useState<Course[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const [adding, setAdding] = useState(false);
+
+  const reload = () =>
+    listCourses().then((c) => {
+      setCourses(c);
+      setLoaded(true);
+    });
 
   useEffect(() => {
     let on = true;
@@ -56,7 +66,7 @@ export default function CoursesHome({
           <CourseCard key={c.id} course={c} onClick={() => onOpenCourse(c)} />
         ))}
         <button
-          onClick={onNewCourse}
+          onClick={() => setAdding((open) => !open)}
           className="flex h-[200px] flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-[#dde3dd] text-[#646464] transition-colors hover:border-[#b8beb8] hover:bg-[#eef1ed]"
         >
           <Plus size={22} />
@@ -68,6 +78,20 @@ export default function CoursesHome({
         <p className="mt-4 text-[14px] text-[#b4b8b4]">
           {t.noCourses}
         </p>
+      )}
+
+      {adding && (
+        <div className="mt-5 max-w-[760px]">
+          <AddCourseForm
+            byokActive={byokActive}
+            onCreated={(course) => {
+              setAdding(false);
+              reload();
+              onChanged();
+              onOpenCourse(course);
+            }}
+          />
+        </div>
       )}
 
       <div className="mt-6">

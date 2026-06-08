@@ -349,8 +349,9 @@ export default function App() {
         {view === 'home' && (
           <CoursesHome
             refreshKey={refreshKey}
+            byokActive={byokActive}
             onOpenCourse={openCourse}
-            onNewCourse={() => setView('dashboard')}
+            onChanged={() => setRefreshKey((k) => k + 1)}
             onQuickQuiz={() => {
               setUploadCourseId(null);
               setView('upload');
@@ -361,9 +362,7 @@ export default function App() {
 
         {view === 'dashboard' && (
           <Dashboard
-            byokActive={byokActive}
             onOpenCourse={openCourse}
-            onChanged={() => setRefreshKey((k) => k + 1)}
             refreshKey={refreshKey}
           />
         )}
