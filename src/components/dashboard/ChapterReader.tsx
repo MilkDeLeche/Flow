@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   ArrowLeft,
   BookOpen,
-  Check,
   Clock,
   FileText,
   Highlighter,
@@ -11,7 +10,7 @@ import {
   Play,
   Target,
 } from 'lucide-react';
-import { readingMinutes, splitChapterSections } from '../../lib/chapter';
+import { readingMinutes, splitChapterSections, extractDefinitions } from '../../lib/chapter';
 import type { Course } from '../../lib/courses';
 import type { RecentMaterial } from '../../lib/store';
 import {
@@ -19,7 +18,16 @@ import {
   saveReaderMark,
   type ReaderMarks,
 } from '../../lib/readerMarks';
-import { ROUND_SIZES, type QuizMode, type RoundSize } from '../../lib/types';
+import {
+  addTextHighlight,
+  highlightsForSection,
+  loadTextHighlights,
+  removeTextHighlight,
+  updateTextHighlightNote,
+  type TextHighlight,
+} from '../../lib/textHighlights';
+import SelectableText from './SelectableText';
+import { ROUND_SIZES, type QuizFocus, type QuizMode, type RoundSize } from '../../lib/types';
 import { useLocale } from '../../lib/i18n';
 
 interface Props {
@@ -27,7 +35,7 @@ interface Props {
   material: RecentMaterial;
   focusSectionId?: string;
   onBack: () => void;
-  onStartQuiz: (size: RoundSize, mode: QuizMode) => void;
+  onStartQuiz: (size: RoundSize, mode: QuizMode, focus: QuizFocus) => void;
   onReview: () => void;
 }
 
@@ -58,11 +66,15 @@ export default function ChapterReader({
 }: Props) {
   const { t } = useLocale();
   const sections = useMemo(() => splitChapterSections(material.content), [material.content]);
+  const definitions = useMemo(() => extractDefinitions(material.content), [material.content]);
   const minutes = useMemo(() => readingMinutes(material.content), [material.content]);
   const [activeId, setActiveId] = useState(sections[0]?.id ?? 'section-1');
   const [roundSize, setRoundSize] = useState<RoundSize>(10);
   const [mode, setMode] = useState<QuizMode>('practice');
+  const [quizFocus, setQuizFocus] = useState<QuizFocus>('mixed');
   const [marks, setMarks] = useState<ReaderMarks>({ highlights: [], notes: {} });
+  const [textHighlights, setTextHighlights] = useState<TextHighlight[]>([]);
+  const [activeNoteId, setActiveNoteId] = useState<string | null>(null);
   const sectionTitle = (title: string, index: number) => {
     if (title === 'Opening') return t.opening;
     if (title === 'Chapter text') return t.chapterText;
@@ -70,10 +82,12 @@ export default function ChapterReader({
     return title;
   };
   const noteCount = Object.values(marks.notes).filter((note) => note.trim()).length;
+  const textNoteCount = textHighlights.filter((h) => h.note.trim()).length;
 
   useEffect(() => {
     let on = true;
     setMarks({ highlights: [], notes: {} });
+    setTextHighlights(loadTextHighlights(material.id));
     loadReaderMarks(material.id).then((loaded) => {
       if (on) setMarks(loaded);
     });
@@ -93,20 +107,21 @@ export default function ChapterReader({
     }, 80);
   }, [focusSectionId]);
 
-  const toggleHighlight = (sectionId: string) => {
-    setMarks((current) => {
-      const highlighted = new Set(current.highlights);
-      if (highlighted.has(sectionId)) highlighted.delete(sectionId);
-      else highlighted.add(sectionId);
-      const next = { ...current, highlights: Array.from(highlighted) };
-      saveReaderMark({
-        materialId: material.id,
-        sectionId,
-        highlighted: highlighted.has(sectionId),
-        note: current.notes[sectionId] || '',
-      });
-      return next;
+
+  const addSelectionHighlight = (
+    sectionId: string,
+    range: { start: number; end: number; text: string }
+  ) => {
+    const next = addTextHighlight(material.id, {
+      sectionId,
+      start: range.start,
+      end: range.end,
+      text: range.text,
+      note: '',
     });
+    setTextHighlights(next);
+    const created = next[next.length - 1];
+    if (created) setActiveNoteId(created.id);
   };
 
   const updateNote = (sectionId: string, note: string) => {
@@ -146,8 +161,8 @@ export default function ChapterReader({
         </div>
         <div className="rounded-xl border border-[#dde3dd] bg-white px-4 py-3">
           <p className="text-[12px] text-[#646464]">{t.studyMarks}</p>
-          <p className="text-[20px] font-semibold text-[#2c2c2c]">
-            {marks.highlights.length + noteCount}
+          <p className="text-[20px] font-semibold text-ink">
+            {marks.highlights.length + textHighlights.length + noteCount + textNoteCount}
           </p>
         </div>
       </div>
@@ -207,8 +222,8 @@ export default function ChapterReader({
             </p>
             <div className="mt-5 flex flex-wrap gap-2">
               <button
-                onClick={() => onStartQuiz(roundSize, mode)}
-                className="inline-flex items-center gap-2 rounded-full bg-black px-5 py-3 text-[14px] text-white transition-colors hover:bg-[#2c2c2c]"
+                onClick={() => onStartQuiz(roundSize, mode, quizFocus)}
+                className="inline-flex items-center gap-2 rounded-full bg-accent px-5 py-3 text-[14px] text-accent-ink transition-colors hover:opacity-90"
               >
                 <Play size={15} /> {t.startQuizPlain}
               </button>
@@ -232,34 +247,17 @@ export default function ChapterReader({
                 onMouseEnter={() => setActiveId(section.id)}
               >
                 <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                  <h2 className="text-[18px] font-semibold text-[#2c2c2c]">
+                  <h2 className="text-[18px] font-semibold text-ink">
                     {sectionTitle(section.title, index)}
                   </h2>
-                  <button
-                    onClick={() => toggleHighlight(section.id)}
-                    className={`inline-flex w-fit items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12px] transition-colors ${
-                      marks.highlights.includes(section.id)
-                        ? 'border-[#e6cf76] bg-[#fff4bd] text-[#66540f]'
-                        : 'border-[#dde3dd] bg-white text-[#646464] hover:bg-[#eef1ed]'
-                    }`}
-                  >
-                    {marks.highlights.includes(section.id) ? (
-                      <Check size={13} />
-                    ) : (
-                      <Highlighter size={13} />
-                    )}
-                    {marks.highlights.includes(section.id)
-                      ? t.highlighted
-                      : t.highlight}
-                  </button>
+                  <p className="text-[12px] text-ink-muted">{t.selectToHighlight}</p>
                 </div>
-                <div
-                  className={`max-w-[72ch] whitespace-pre-wrap rounded-lg text-[16px] leading-8 text-[#383a38] ${
-                    marks.highlights.includes(section.id) ? 'bg-[#fff9d9] px-3 py-2' : ''
-                  }`}
-                >
-                  {section.body}
-                </div>
+                <SelectableText
+                  sectionId={section.id}
+                  text={section.body}
+                  highlights={highlightsForSection(textHighlights, section.id)}
+                  onHighlight={(range) => addSelectionHighlight(section.id, range)}
+                />
                 <div className="mt-3 max-w-[72ch] rounded-xl border border-[#dde3dd] bg-white px-3 py-3">
                   <label className="mb-2 flex items-center gap-2 text-[12px] font-medium text-[#646464]">
                     <NotebookPen size={14} /> {t.sectionNote}
@@ -277,8 +275,62 @@ export default function ChapterReader({
           </div>
         </article>
 
-        <aside className="lg:sticky lg:top-24 lg:h-fit">
-          <div className="rounded-2xl border border-[#dde3dd] bg-white p-4">
+        <aside className="space-y-4 lg:sticky lg:top-24 lg:h-fit">
+          <div className="rounded-2xl border border-line bg-surface-card p-4">
+            <div className="mb-4 flex items-center gap-2">
+              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-muted">
+                <NotebookPen size={17} />
+              </span>
+              <div>
+                <p className="text-[14px] font-medium text-ink">{t.studyNotesPanel}</p>
+                <p className="text-[12px] text-ink-muted">{t.selectToHighlight}</p>
+              </div>
+            </div>
+            {textHighlights.length === 0 && noteCount === 0 ? (
+              <p className="text-[13px] text-ink-muted">{t.noHighlightsYet}</p>
+            ) : (
+              <div className="max-h-[280px] space-y-3 overflow-auto pr-1">
+                {textHighlights.map((h) => {
+                  const section = sections.find((s) => s.id === h.sectionId);
+                  return (
+                    <div
+                      key={h.id}
+                      className={`rounded-xl border px-3 py-2 ${
+                        activeNoteId === h.id ? 'border-line-strong bg-highlight' : 'border-line'
+                      }`}
+                    >
+                      <p className="mb-1 text-[11px] font-medium uppercase text-ink-muted">
+                        {section ? sectionTitle(section.title, section.index - 1) : h.sectionId}
+                      </p>
+                      <p className="mb-2 line-clamp-2 text-[13px] text-ink">&ldquo;{h.text}&rdquo;</p>
+                      <textarea
+                        value={h.note}
+                        onFocus={() => setActiveNoteId(h.id)}
+                        onChange={(e) =>
+                          setTextHighlights(
+                            updateTextHighlightNote(material.id, h.id, e.target.value)
+                          )
+                        }
+                        placeholder={t.highlightNotePlaceholder}
+                        rows={2}
+                        className="mb-2 w-full resize-none rounded-lg border border-line bg-surface px-2 py-1.5 text-[12px] outline-none focus:border-line-strong"
+                      />
+                      <button
+                        onClick={() =>
+                          setTextHighlights(removeTextHighlight(material.id, h.id))
+                        }
+                        className="text-[11px] text-ink-muted underline hover:text-ink"
+                      >
+                        {t.removeHighlight}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          <div className="rounded-2xl border border-line bg-surface-card p-4">
             <div className="mb-4 flex items-center gap-2">
               <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#eef1ed]">
                 <ListChecks size={17} />
@@ -289,7 +341,36 @@ export default function ChapterReader({
               </div>
             </div>
 
-            <label className="mb-2 block text-[12px] text-[#646464]">{t.roundSize}</label>
+            {definitions.length > 0 && (
+              <p className="mb-4 text-[12px] text-ink-secondary">
+                {t.definitionsFound(definitions.length)}
+              </p>
+            )}
+
+            <label className="mb-2 block text-[12px] text-ink-secondary">{t.quizFocus}</label>
+            <div className="mb-4 grid grid-cols-1 gap-2">
+              {(
+                [
+                  ['mixed', t.quizFocusMixed],
+                  ['definitions', t.quizFocusDefinitions],
+                  ['comprehension', t.quizFocusComprehension],
+                ] as const
+              ).map(([value, label]) => (
+                <button
+                  key={value}
+                  onClick={() => setQuizFocus(value)}
+                  className={`h-9 rounded-lg px-3 text-left text-[12px] transition-colors ${
+                    quizFocus === value
+                      ? 'bg-accent text-accent-ink'
+                      : 'bg-surface-muted text-ink hover:bg-surface-muted/80'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            <label className="mb-2 block text-[12px] text-ink-secondary">{t.roundSize}</label>
             <div className="mb-4 grid grid-cols-5 gap-1.5">
               {ROUND_SIZES.map((n) => (
                 <button
@@ -306,26 +387,29 @@ export default function ChapterReader({
               ))}
             </div>
 
-            <label className="mb-2 block text-[12px] text-[#646464]">{t.mode}</label>
-            <div className="mb-4 grid grid-cols-2 gap-2">
+            <label className="mb-2 block text-[12px] text-ink-secondary">{t.mode}</label>
+            <div className="mb-2 grid grid-cols-2 gap-2">
               {(['practice', 'exam'] as const).map((value) => (
                 <button
                   key={value}
                   onClick={() => setMode(value)}
                   className={`h-10 rounded-lg text-[13px] transition-colors ${
                     mode === value
-                      ? 'bg-black text-white'
-                      : 'bg-[#f5f7f3] text-[#2c2c2c] hover:bg-[#eef1ed]'
+                      ? 'bg-accent text-accent-ink'
+                      : 'bg-surface-muted text-ink hover:bg-surface-muted/80'
                   }`}
                 >
                   {value === 'practice' ? t.practice : t.exam}
                 </button>
               ))}
             </div>
+            {mode === 'exam' && roundSize === 50 && (
+              <p className="mb-4 text-[11px] leading-relaxed text-ink-muted">{t.testModeHint}</p>
+            )}
 
             <button
-              onClick={() => onStartQuiz(roundSize, mode)}
-              className="mb-2 inline-flex w-full items-center justify-center gap-2 rounded-full bg-black px-4 py-3 text-[14px] text-white transition-colors hover:bg-[#2c2c2c]"
+              onClick={() => onStartQuiz(roundSize, mode, quizFocus)}
+              className="mb-2 inline-flex w-full items-center justify-center gap-2 rounded-full bg-accent px-4 py-3 text-[14px] text-accent-ink transition-colors hover:opacity-90"
             >
               <Play size={15} /> {t.startQuizPlain}
             </button>

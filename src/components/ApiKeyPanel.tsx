@@ -16,6 +16,7 @@ import { useLocale } from '../lib/i18n';
 
 interface ApiKeyPanelProps {
   onChange?: () => void;
+  byokAllowed?: boolean;
 }
 
 const PROVIDERS: Provider[] = ['anthropic', 'openai', 'gemini'];
@@ -24,7 +25,7 @@ const PROVIDERS: Provider[] = ['anthropic', 'openai', 'gemini'];
 // this browser only. The copy reflects whichever mode is active.
 const stored = supabaseEnabled && !import.meta.env.DEV;
 
-export default function ApiKeyPanel({ onChange }: ApiKeyPanelProps) {
+export default function ApiKeyPanel({ onChange, byokAllowed = true }: ApiKeyPanelProps) {
   const { t } = useLocale();
   const [status, setStatus] = useState<KeyStatus>({ configured: false });
   const [open, setOpen] = useState(false);
@@ -147,6 +148,16 @@ export default function ApiKeyPanel({ onChange }: ApiKeyPanelProps) {
             >
               <Trash2 size={14} /> {t.remove}
             </button>
+          </div>
+        ) : !byokAllowed ? (
+          <div className="mt-4 rounded-xl border border-line bg-surface-muted px-4 py-3">
+            <p className="text-[13px] leading-relaxed text-ink-secondary">{t.upgradeToStudent}</p>
+            <a
+              href="/#pricing"
+              className="mt-2 inline-block text-[13px] font-medium text-ink underline"
+            >
+              {t.pricing} →
+            </a>
           </div>
         ) : open ? (
           <div className="mt-4 space-y-3">

@@ -19,7 +19,15 @@ import { supabase } from './lib/supabase';
 import { loadKeyStatus } from './lib/byok';
 import { useAuth } from './lib/useAuth';
 import { useLocale } from './lib/i18n';
-import { inferChapterTitle, prepareStudyMaterial } from './lib/chapter';
+import { inferChapterTitle, prepareStudyMaterial, extractDefinitions, definitionsPromptBlock } from './lib/chapter';
+import { profileFromSession } from './lib/userProfile';
+import { refreshPlanAfterCheckout, startCheckout, takePendingCheckout } from './lib/stripeCheckout';
+import { usePlanTier } from './lib/usePlanTier';
+import {
+  canUseByok,
+  canUseStudioFeatures,
+  effectiveTier,
+} from './lib/tiers';
 import { parseCourseFromInput } from './lib/parseCourse';
 import type { Course } from './lib/courses';
 import {
@@ -37,6 +45,7 @@ import {
 import type {
   AnswerRecord,
   QuizMode,
+  QuizFocus,
   QuizQuestion,
   RoundSize,
 } from './lib/types';
@@ -103,12 +112,40 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [byokActive, setByokActive] = useState(false);
 
-  const userName = authRequired ? session?.user.email ?? 'Student' : localName;
+  const userProfile = profileFromSession(session);
+  const planTier = usePlanTier(session);
+  const userName = authRequired ? userProfile.displayName : localName;
+  const byokAllowed = canUseByok(effectiveTier(planTier, byokActive));
+  const studioEnabled = canUseStudioFeatures(planTier);
+  const allowUpload = byokAllowed && byokActive;
 
   useEffect(() => {
     const saved = localStorage.getItem(USER_KEY);
     if (saved) setLocalName(saved);
   }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const checkout = params.get('checkout');
+    if (!checkout) return;
+
+    const cleanUrl = `${window.location.pathname}${window.location.hash}`;
+    window.history.replaceState(null, '', cleanUrl);
+
+    if (checkout === 'success') {
+      void refreshPlanAfterCheckout();
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!session) return;
+    const pending = takePendingCheckout();
+    if (!pending) return;
+
+    startCheckout(pending).catch((err) => {
+      setError(err instanceof Error ? err.message : 'Checkout failed.');
+    });
+  }, [session]);
 
   // Whether the user has their own key configured (stored on their account in
   // prod, or in this browser in dev). Re-checked when the session changes.
@@ -140,23 +177,31 @@ export default function App() {
     mat: string,
     mId: string,
     mTitle: string,
-    pdf?: string
+    pdf?: string,
+    focus: QuizFocus = 'mixed',
+    quizMode: QuizMode = mode
   ) => {
     setRoundSize(size);
     setIsReview(false);
     setError(null);
     setView('loading');
+    const isTest = quizMode === 'exam' && size === 50;
+    const genOptions = {
+      focus,
+      isTest,
+      definitionsBlock: definitionsPromptBlock(extractDefinitions(mat)),
+    };
     try {
       const bank = await listBank(mId);
       let pool = bank;
       if (pdf && bank.length === 0) {
-        const fresh = await generateQuiz(mat, 50, [], pdf);
+        const fresh = await generateQuiz(mat, 50, [], pdf, genOptions);
         await addToBank(mId, mTitle, fresh);
         pool = fresh;
       } else if (bank.length < size) {
         const need = size - bank.length;
         const avoid = bank.map((q) => q.question).slice(0, 60);
-        const fresh = await generateQuiz(mat, need, avoid);
+        const fresh = await generateQuiz(mat, need, avoid, undefined, genOptions);
         await addToBank(mId, mTitle, fresh);
         pool = [...bank, ...fresh];
       }
@@ -239,14 +284,15 @@ export default function App() {
       return;
     }
 
-    await runRound(args.roundSize, studyMaterial, id, finalTitle, args.pdfBase64);
+    await runRound(args.roundSize, studyMaterial, id, finalTitle, args.pdfBase64, 'mixed', args.mode);
   };
 
   const handleResume = async (
     m: RecentMaterial,
     fromCourse: Course | null = null,
     size: RoundSize = 10,
-    quizMode: QuizMode = 'practice'
+    quizMode: QuizMode = 'practice',
+    focus: QuizFocus = 'mixed'
   ) => {
     setTitle(m.title);
     setMaterial(m.content);
@@ -254,7 +300,7 @@ export default function App() {
     setMode(quizMode);
     setPdfBase64(undefined);
     setRoundCourse(fromCourse);
-    await runRound(size, m.content, m.id, m.title);
+    await runRound(size, m.content, m.id, m.title, undefined, focus, quizMode);
   };
 
   const startReview = (missed: MissedQuestion[]) => {
@@ -303,7 +349,7 @@ export default function App() {
       if (remaining.length) startReview(remaining.slice(0, 30));
       else setView('review');
     } else {
-      await runRound(roundSize, material, materialId, title);
+      await runRound(roundSize, material, materialId, title, pdfBase64, 'mixed', mode);
     }
   };
 
@@ -367,7 +413,7 @@ export default function App() {
   // ---- Auth gate ----
   if (authRequired && authLoading) {
     return (
-      <div className="min-h-screen bg-[#fefffc] flex items-center justify-center">
+      <div className="min-h-screen bg-surface flex items-center justify-center">
         <Loader2 size={28} className="animate-spin text-[#646464]" />
       </div>
     );
@@ -381,7 +427,7 @@ export default function App() {
       : 'home';
 
   return (
-    <div className="min-h-screen bg-[#fefffc] text-[#2c2c2c]">
+      <div className="min-h-screen bg-surface text-ink">
       <TopBar
         view={topView}
         onNavigate={(v) => {
@@ -389,16 +435,17 @@ export default function App() {
           setView(v);
         }}
         userName={userName}
+        userProfile={authRequired ? userProfile : undefined}
         authed={authRequired && !!session}
         missedCount={missedCount}
         onChangeUser={changeUser}
       />
 
-      <main>
+      <main className="md:ml-[248px]">
         {view === 'home' && (
           <CoursesHome
             refreshKey={refreshKey}
-            byokActive={byokActive}
+            byokActive={allowUpload}
             onOpenCourse={openCourse}
             onCourseCreated={handleCourseCreated}
             onChanged={() => setRefreshKey((k) => k + 1)}
@@ -421,6 +468,12 @@ export default function App() {
           <Settings
             onKeyChange={reloadKeyStatus}
             onSignOut={() => supabase?.auth.signOut()}
+            displayName={authRequired ? userProfile.displayName : undefined}
+            email={authRequired ? userProfile.email : undefined}
+            avatarUrl={authRequired ? userProfile.avatarUrl : undefined}
+            planTier={authRequired ? planTier : undefined}
+            byokAllowed={byokAllowed}
+            studioEnabled={studioEnabled}
           />
         )}
 
@@ -458,8 +511,8 @@ export default function App() {
             focusSectionId={readerFocusId}
             onBack={() => setView(currentCourse ? 'course' : 'home')}
             onReview={() => setView('review')}
-            onStartQuiz={(size, quizMode) =>
-              handleResume(readerMaterial, currentCourse, size, quizMode)
+            onStartQuiz={(size, quizMode, focus) =>
+              handleResume(readerMaterial, currentCourse, size, quizMode, focus)
             }
           />
         )}
@@ -479,7 +532,7 @@ export default function App() {
             )}
             <Uploader
               onStart={handleStart}
-              allowUpload={byokActive}
+              allowUpload={allowUpload}
               intent={uploadCourseId ? 'chapter' : 'quiz'}
               courseName={currentCourse?.name}
             />
@@ -496,7 +549,7 @@ export default function App() {
                 <div className="flex items-center justify-center gap-3">
                   <button
                     onClick={() =>
-                      runRound(roundSize, material, materialId, title, pdfBase64)
+                      runRound(roundSize, material, materialId, title, pdfBase64, 'mixed', mode)
                     }
                     className="px-5 py-3 text-[15px] bg-black text-white rounded-full hover:bg-[#2c2c2c] transition-colors"
                   >
@@ -553,7 +606,7 @@ export default function App() {
             answers={answers}
             roundSize={roundSize}
             isReview={isReview}
-            onRound={(size) => runRound(size, material, materialId, title)}
+            onRound={(size) => runRound(size, material, materialId, title, pdfBase64, 'mixed', mode)}
             onRetake={retake}
             onNewMaterial={() => {
               if (isReview) {

@@ -12,7 +12,7 @@ interface Props {
 export default function Navbar({ onEnter }: Props) {
   const { t } = useLocale();
   return (
-    <header className="fixed left-0 right-0 top-0 z-40 border-b border-[#e8e8e8] bg-[#fefffc]/90 backdrop-blur-sm lg:left-[240px]">
+    <header className="fixed left-0 right-0 top-0 z-40 border-b border-line bg-surface/90 backdrop-blur-sm lg:left-[240px]">
       <div className="flex h-16 items-center justify-between px-5 lg:px-10">
         <a href="#home" className="font-mondwest text-[28px] leading-none lg:text-[32px]">
           Flow
@@ -20,13 +20,19 @@ export default function Navbar({ onEnter }: Props) {
         <div className="flex items-center gap-2 lg:gap-4">
           <a
             href="#features"
-            className="hidden text-[15px] text-[#646464] transition-colors hover:text-[#2c2c2c] lg:inline"
+            className="hidden text-[15px] text-ink-secondary transition-colors hover:text-ink lg:inline"
           >
             {t.features}
           </a>
           <a
+            href="#pricing"
+            className="hidden text-[15px] text-ink-secondary transition-colors hover:text-ink lg:inline"
+          >
+            {t.pricing}
+          </a>
+          <a
             href="#demo"
-            className="hidden text-[15px] text-[#646464] transition-colors hover:text-[#2c2c2c] lg:inline"
+            className="hidden text-[15px] text-ink-secondary transition-colors hover:text-ink lg:inline"
           >
             {t.demo}
           </a>

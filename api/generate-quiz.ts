@@ -173,6 +173,13 @@ export default async function handler(
       provider,
       apiKey,
       model,
+      focus:
+        body.focus === 'definitions' || body.focus === 'comprehension'
+          ? body.focus
+          : 'mixed',
+      isTest: Boolean(body.isTest),
+      definitionsBlock:
+        typeof body.definitionsBlock === 'string' ? body.definitionsBlock : undefined,
     });
 
     return send(res, 200, { questions });

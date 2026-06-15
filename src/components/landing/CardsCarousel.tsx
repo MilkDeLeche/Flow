@@ -2,56 +2,50 @@ import { useEffect, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
-
-interface Card {
-  category: string;
-  text: string;
-  from: string;
-  to: string;
-}
-
-// On-brand gradient cards (no external images, so nothing breaks or loads slow).
-const CARDS: Card[] = [
-  {
-    category: 'For students',
-    text: 'Turn this week’s chapter into real practice',
-    from: '#5b6e57',
-    to: '#39492f',
-  },
-  {
-    category: 'For exam week',
-    text: 'Drill until every answer is automatic',
-    from: '#8a5a44',
-    to: '#5e342a',
-  },
-  {
-    category: 'Any subject',
-    text: 'Biology, econ, law, code — it reads them all',
-    from: '#46566b',
-    to: '#2b3340',
-  },
-  {
-    category: 'In your language',
-    text: 'Spanish slides become a quiz en español',
-    from: '#6b4a63',
-    to: '#3f2b3a',
-  },
-  {
-    category: 'Private by design',
-    text: 'Your notes and keys stay yours',
-    from: '#2f4858',
-    to: '#1b2a33',
-  },
-];
+import { useLocale } from '../../lib/i18n';
 
 /**
  * Auto-rotating carousel (4s) showing 3 cards on desktop, 1 on mobile, with
  * manual prev/next. Slides via a transformed track with custom easing.
  */
 export default function CardsCarousel() {
+  const { t } = useLocale();
   const root = useRef<HTMLElement>(null);
   const [perView, setPerView] = useState(3);
   const [index, setIndex] = useState(0);
+
+  const cards = [
+    {
+      category: t.carouselStudents,
+      text: t.carouselStudentsDesc,
+      from: '#5b6e57',
+      to: '#39492f',
+    },
+    {
+      category: t.carouselExam,
+      text: t.carouselExamDesc,
+      from: '#8a5a44',
+      to: '#5e342a',
+    },
+    {
+      category: t.carouselSubjects,
+      text: t.carouselSubjectsDesc,
+      from: '#46566b',
+      to: '#2b3340',
+    },
+    {
+      category: t.carouselLanguage,
+      text: t.carouselLanguageDesc,
+      from: '#6b4a63',
+      to: '#3f2b3a',
+    },
+    {
+      category: t.carouselPrivate,
+      text: t.carouselPrivateDesc,
+      from: '#2f4858',
+      to: '#1b2a33',
+    },
+  ];
 
   useEffect(() => {
     const calc = () => setPerView(window.innerWidth < 1024 ? 1 : 3);
@@ -60,7 +54,7 @@ export default function CardsCarousel() {
     return () => window.removeEventListener('resize', calc);
   }, []);
 
-  const maxIndex = Math.max(0, CARDS.length - perView);
+  const maxIndex = Math.max(0, cards.length - perView);
 
   useEffect(() => {
     setIndex((i) => Math.min(i, maxIndex));
@@ -95,18 +89,18 @@ export default function CardsCarousel() {
     <section
       id="cards"
       ref={root}
-      className="scroll-mt-24 border-t border-[#e8e8e8] px-5 py-12 lg:px-10 lg:py-20"
+      className="scroll-mt-24 border-t border-line px-5 py-12 lg:px-10 lg:py-20"
     >
       <div className="carousel-head mb-6 flex items-center justify-between">
-        <h2 className="max-w-[620px] font-mondwest text-[28px] leading-tight md:text-[40px] lg:text-[44px]">
-          Made for however you study
+        <h2 className="max-w-[620px] font-mondwest text-[28px] leading-tight text-ink md:text-[40px] lg:text-[44px]">
+          {t.carouselTitle}
         </h2>
         <div className="flex gap-2">
           <button
             type="button"
             aria-label="Previous"
             onClick={prev}
-            className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-[#dde3dd] bg-white transition-colors hover:bg-[#eef1ed]"
+            className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-line bg-surface-card transition-colors hover:bg-surface-muted"
           >
             <ChevronLeft size={18} />
           </button>
@@ -114,7 +108,7 @@ export default function CardsCarousel() {
             type="button"
             aria-label="Next"
             onClick={next}
-            className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-[#dde3dd] bg-white transition-colors hover:bg-[#eef1ed]"
+            className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-line bg-surface-card transition-colors hover:bg-surface-muted"
           >
             <ChevronRight size={18} />
           </button>
@@ -131,7 +125,7 @@ export default function CardsCarousel() {
             transitionTimingFunction: 'cubic-bezier(0.32, 0.72, 0, 1)',
           }}
         >
-          {CARDS.map((c) => (
+          {cards.map((c) => (
             <div
               key={c.text}
               className="shrink-0 px-2"

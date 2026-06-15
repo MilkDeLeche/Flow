@@ -61,7 +61,7 @@ export default function JumpBackIn({ onResume, refreshKey }: JumpBackInProps) {
   if (!materials.length) return null;
 
   return (
-    <section className="max-w-[760px] mx-auto px-5 md:px-8 pt-8">
+    <section className="pt-2">
       <TextFade direction="up">
         <h2 className="font-mondwest text-[#2c2c2c] text-[22px] md:text-[26px] mb-4">
           Jump back in

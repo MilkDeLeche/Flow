@@ -1,0 +1,30 @@
+import type { User } from '@supabase/supabase-js';
+
+/** free = shared AI only. student = BYOK unlock. studio = BYOK + Flow reader + tutor. */
+export type PlanTier = 'free' | 'student' | 'studio';
+
+export const PLAN_LABELS: Record<PlanTier, string> = {
+  free: 'Free',
+  student: 'Student',
+  studio: 'Flow Studio',
+};
+
+export function tierFromUser(user: User | null | undefined): PlanTier {
+  const raw = user?.user_metadata?.plan_tier ?? user?.app_metadata?.plan_tier;
+  if (raw === 'student' || raw === 'studio') return raw;
+  return 'free';
+}
+
+export function canUseByok(tier: PlanTier): boolean {
+  return tier === 'student' || tier === 'studio';
+}
+
+export function canUseStudioFeatures(tier: PlanTier): boolean {
+  return tier === 'studio';
+}
+
+/** Dev-only: treat local BYOK as Student tier for testing uploads. */
+export function effectiveTier(tier: PlanTier, localByok = false): PlanTier {
+  if (import.meta.env.DEV && localByok && tier === 'free') return 'student';
+  return tier;
+}

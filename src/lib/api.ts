@@ -1,6 +1,12 @@
-import type { QuizQuestion } from './types';
+import type { QuizFocus, QuizQuestion } from './types';
 import { supabase } from './supabase';
 import { getRequestKey } from './byok';
+
+export interface GenerateQuizOptions {
+  focus?: QuizFocus;
+  isTest?: boolean;
+  definitionsBlock?: string;
+}
 
 /**
  * Calls the server (Vercel function in prod, Vite middleware in dev) to
@@ -11,21 +17,19 @@ export async function generateQuiz(
   material: string,
   count: number,
   avoid?: string[],
-  pdfBase64?: string
+  pdfBase64?: string,
+  options?: GenerateQuizOptions
 ): Promise<QuizQuestion[]> {
   const headers: Record<string, string> = {
     'content-type': 'application/json',
   };
 
-  // Attach the logged-in user's token so the protected endpoint accepts us.
   if (supabase) {
     const { data } = await supabase.auth.getSession();
     const token = data.session?.access_token;
     if (token) headers['authorization'] = `Bearer ${token}`;
   }
 
-  // In production the server uses your stored key — nothing is sent here.
-  // In local dev, getRequestKey() returns the localStorage key to send inline.
   const byok = getRequestKey();
 
   const res = await fetch('/api/generate-quiz', {
@@ -39,6 +43,9 @@ export async function generateQuiz(
       provider: byok?.provider,
       apiKey: byok?.key,
       model: byok?.model,
+      focus: options?.focus ?? 'mixed',
+      isTest: options?.isTest ?? false,
+      definitionsBlock: options?.definitionsBlock,
     }),
   });
 

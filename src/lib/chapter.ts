@@ -2,6 +2,7 @@ export interface ChapterSection {
   id: string;
   title: string;
   body: string;
+  index: number;
 }
 
 export interface SourceMatch {
@@ -10,8 +11,17 @@ export interface SourceMatch {
   excerpt: string;
 }
 
+export interface DefinitionTerm {
+  term: string;
+  definition: string;
+  sectionId?: string;
+}
+
 const HEADING_RE =
-  /^(chapter\s+\d+|unit\s+\d+|section\s+\d+|\d+(\.\d+)*\s+|[A-Z][A-Z0-9\s:,-]{8,})/i;
+  /^(chapter\s+\d+|unit\s+\d+|section\s+\d+|part\s+\d+|lesson\s+\d+|\d+(\.\d+)+\s+|\d+\.\s+[A-Z]|[A-Z][A-Z0-9\s:,-]{8,})/i;
+
+const SUBHEADING_RE =
+  /^(\d+(\.\d+)+\s+.{3,80}|[A-Z][a-z]+(?:\s+[A-Z][a-z]+){0,5}:?\s*$)/;
 
 function cleanLine(line: string): string {
   return line.replace(/\s+/g, ' ').trim();
@@ -89,28 +99,40 @@ export function splitChapterSections(content: string): ChapterSection[] {
   let currentTitle = 'Opening';
   let currentBody: string[] = [];
 
-  const flush = () => {
-    const body = currentBody.join('\n').trim();
-    if (!body) return;
+  const pushSection = (title: string, body: string) => {
+    const trimmed = body.trim();
+    if (!trimmed) return;
     sections.push({
       id: `section-${sections.length + 1}`,
-      title: currentTitle,
-      body,
+      title,
+      body: trimmed,
+      index: sections.length + 1,
     });
+  };
+
+  const flush = () => {
+    pushSection(currentTitle, currentBody.join('\n'));
     currentBody = [];
   };
 
   for (const raw of lines) {
     const line = cleanLine(raw);
-    const looksLikeHeading =
+    const bodyLen = currentBody.join(' ').length;
+    const looksLikeMajorHeading =
       line.length >= 4 &&
       line.length <= 90 &&
       HEADING_RE.test(line) &&
-      currentBody.join(' ').length > 240;
+      bodyLen > 180;
+    const looksLikeSubHeading =
+      !looksLikeMajorHeading &&
+      line.length >= 6 &&
+      line.length <= 80 &&
+      SUBHEADING_RE.test(line) &&
+      bodyLen > 900;
 
-    if (looksLikeHeading) {
+    if (looksLikeMajorHeading || looksLikeSubHeading) {
       flush();
-      currentTitle = line;
+      currentTitle = line.replace(/^section\s+/i, 'Section ').replace(/^chapter\s+/i, 'Chapter ');
       continue;
     }
 
@@ -118,32 +140,106 @@ export function splitChapterSections(content: string): ChapterSection[] {
   }
   flush();
 
-  if (sections.length > 1) return sections.slice(0, 18);
+  if (sections.length > 1) {
+    return sections.slice(0, 24).map((s, i) => ({ ...s, index: i + 1 }));
+  }
 
   const paragraphs = content
     .split(/\n{2,}/)
     .map((part) => part.trim())
     .filter(Boolean);
 
-  if (paragraphs.length <= 3) {
+  if (paragraphs.length <= 2) {
     return [
       {
         id: 'section-1',
         title: 'Chapter text',
         body: content.trim(),
+        index: 1,
       },
     ];
   }
 
+  const targetChars = Math.max(900, Math.ceil(content.length / 8));
   const grouped: ChapterSection[] = [];
-  for (let i = 0; i < paragraphs.length; i += 4) {
+  let bucket: string[] = [];
+  let bucketLen = 0;
+
+  for (const paragraph of paragraphs) {
+    bucket.push(paragraph);
+    bucketLen += paragraph.length;
+    if (bucketLen >= targetChars) {
+      grouped.push({
+        id: `section-${grouped.length + 1}`,
+        title: `Section ${grouped.length + 1}`,
+        body: bucket.join('\n\n'),
+        index: grouped.length + 1,
+      });
+      bucket = [];
+      bucketLen = 0;
+    }
+  }
+
+  if (bucket.length) {
     grouped.push({
       id: `section-${grouped.length + 1}`,
-      title: `Part ${grouped.length + 1}`,
-      body: paragraphs.slice(i, i + 4).join('\n\n'),
+      title: `Section ${grouped.length + 1}`,
+      body: bucket.join('\n\n'),
+      index: grouped.length + 1,
     });
   }
-  return grouped.slice(0, 18);
+
+  return grouped.slice(0, 24);
+}
+
+const DEFINITION_PATTERNS: RegExp[] = [
+  /^\*\*(.+?)\*\*[:\s—-]+(.+)$/u,
+  /^__(.+?)__[:\s—-]+(.+)$/u,
+  /^([A-Z][A-Za-z0-9\s/-]{2,40})\s*[—–-]\s*(.{8,})$/u,
+  /^([A-Z][A-Za-z0-9\s/-]{2,40}):\s*(.{8,})$/u,
+  /^(?:define|definition of)\s+(.+?)[:\s—-]+(.+)$/iu,
+  /^"(.+?)"\s+(?:means|refers to|is defined as)\s+(.+)$/iu,
+];
+
+export function extractDefinitions(content: string): DefinitionTerm[] {
+  const sections = splitChapterSections(content);
+  const found: DefinitionTerm[] = [];
+  const seen = new Set<string>();
+
+  const add = (term: string, definition: string, sectionId?: string) => {
+    const key = term.toLowerCase().trim();
+    if (key.length < 2 || seen.has(key)) return;
+    seen.add(key);
+    found.push({ term: term.trim(), definition: definition.trim(), sectionId });
+  };
+
+  for (const section of sections) {
+    for (const rawLine of section.body.split(/\r?\n/)) {
+      const line = cleanLine(rawLine);
+      if (line.length < 10) continue;
+
+      for (const pattern of DEFINITION_PATTERNS) {
+        const match = line.match(pattern);
+        if (match) {
+          add(match[1], match[2], section.id);
+          break;
+        }
+      }
+
+      const boldInline = line.match(/\*\*([^*]{2,48})\*\*\s*[—–:-]?\s*(.{8,})/u);
+      if (boldInline) add(boldInline[1], boldInline[2], section.id);
+    }
+  }
+
+  return found.slice(0, 80);
+}
+
+export function definitionsPromptBlock(terms: DefinitionTerm[]): string {
+  if (!terms.length) return '';
+  const lines = terms
+    .slice(0, 40)
+    .map((t) => `- ${t.term}: ${t.definition.slice(0, 220)}`);
+  return `\n\nKey terms detected in the material (prioritize these in definition-style questions):\n${lines.join('\n')}`;
 }
 
 function words(value: string): string[] {
