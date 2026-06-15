@@ -91,16 +91,21 @@ export default async function handler(
   const originHeader = req.headers?.origin;
   const origin = typeof originHeader === 'string' ? originHeader : undefined;
   const base = appBaseUrl(origin);
-  const mode = product === 'studio' ? 'subscription' : 'payment';
 
   try {
     const session = await stripe.checkout.sessions.create({
-      mode,
+      mode: 'subscription',
       line_items: [{ price: priceId, quantity: 1 }],
       client_reference_id: user.id,
       metadata: {
         user_id: user.id,
         product,
+      },
+      subscription_data: {
+        metadata: {
+          user_id: user.id,
+          product,
+        },
       },
       ...(planRow?.stripe_customer_id
         ? { customer: planRow.stripe_customer_id }

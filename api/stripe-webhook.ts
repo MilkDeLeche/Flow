@@ -4,11 +4,11 @@ import { getServerSupabase } from './_auth.js';
 import {
   applyFocusPack,
   applyPlanFromStripe,
-  clearStudioSubscription,
+  clearPlanSubscription,
   findUserIdByStripeCustomer,
   findUserIdByStripeSubscription,
 } from './_planAdmin.js';
-import { getStripe } from './_stripeConfig.js';
+import { getStripe, isCheckoutProduct, priceIdFor } from './_stripeConfig.js';
 
 export const config = {
   api: {
@@ -33,6 +33,13 @@ async function readRawBody(req: IncomingMessage): Promise<Buffer> {
   return Buffer.concat(chunks);
 }
 
+function subscriptionProduct(
+  subscription: Stripe.Subscription
+): 'student' | 'studio' | 'focus_pack' | null {
+  const raw = subscription.metadata?.product;
+  return isCheckoutProduct(raw) ? raw : null;
+}
+
 async function handleCheckoutCompleted(
   cfg: NonNullable<ReturnType<typeof getServerSupabase>>,
   session: Stripe.Checkout.Session
@@ -44,6 +51,11 @@ async function handleCheckoutCompleted(
   }
 
   const product = session.metadata?.product;
+  if (!isCheckoutProduct(product)) {
+    console.error('checkout.session.completed missing product');
+    return;
+  }
+
   const customerId =
     typeof session.customer === 'string' ? session.customer : session.customer?.id ?? null;
   const subscriptionId =
@@ -51,33 +63,36 @@ async function handleCheckoutCompleted(
       ? session.subscription
       : session.subscription?.id ?? null;
 
-  if (session.mode === 'subscription' || product === 'studio') {
-    await applyPlanFromStripe(cfg, userId, {
-      planTier: 'studio',
-      stripeCustomerId: customerId,
-      stripeSubscriptionId: subscriptionId,
-    });
+  if (product === 'focus_pack') {
+    if (subscriptionId) {
+      await applyPlanFromStripe(cfg, userId, {
+        planTier: 'studio',
+        stripeCustomerId: customerId,
+        stripeSubscriptionId: subscriptionId,
+        subscriptionProduct: 'focus_pack',
+      });
+    }
+    await applyFocusPack(cfg, userId);
     return;
   }
 
   if (product === 'student') {
     await applyPlanFromStripe(cfg, userId, {
       planTier: 'student',
-      lifetimeStudent: true,
       stripeCustomerId: customerId,
+      stripeSubscriptionId: subscriptionId,
+      subscriptionProduct: 'student',
     });
     return;
   }
 
-  if (product === 'focus_pack') {
-    if (customerId) {
-      await applyPlanFromStripe(cfg, userId, {
-        planTier: 'studio',
-        stripeCustomerId: customerId,
-        stripeSubscriptionId: subscriptionId,
-      });
-    }
-    await applyFocusPack(cfg, userId);
+  if (product === 'studio') {
+    await applyPlanFromStripe(cfg, userId, {
+      planTier: 'studio',
+      stripeCustomerId: customerId,
+      stripeSubscriptionId: subscriptionId,
+      subscriptionProduct: 'studio',
+    });
   }
 }
 
@@ -100,18 +115,61 @@ async function handleSubscriptionChange(
     return;
   }
 
+  const product = subscriptionProduct(subscription);
+  if (!product) {
+    console.error('subscription event: missing product metadata', subscriptionId);
+    return;
+  }
+
   const active = subscription.status === 'active' || subscription.status === 'trialing';
+
+  if (product === 'focus_pack') {
+    if (active) {
+      await applyPlanFromStripe(cfg, userId, {
+        planTier: 'studio',
+        stripeCustomerId: customerId ?? null,
+        stripeSubscriptionId: subscriptionId,
+        subscriptionProduct: 'focus_pack',
+      });
+    } else {
+      await clearPlanSubscription(cfg, userId, 'focus_pack');
+    }
+    return;
+  }
 
   if (active) {
     await applyPlanFromStripe(cfg, userId, {
-      planTier: 'studio',
+      planTier: product === 'studio' ? 'studio' : 'student',
       stripeCustomerId: customerId ?? null,
       stripeSubscriptionId: subscriptionId,
+      subscriptionProduct: product,
     });
     return;
   }
 
-  await clearStudioSubscription(cfg, userId);
+  await clearPlanSubscription(cfg, userId, product);
+}
+
+async function handleInvoicePaid(
+  cfg: NonNullable<ReturnType<typeof getServerSupabase>>,
+  invoice: Stripe.Invoice
+) {
+  const focusPriceId = priceIdFor('focus_pack');
+  if (!focusPriceId) return;
+
+  const line = invoice.lines.data.find((row) => row.price?.id === focusPriceId);
+  if (!line) return;
+
+  const customerId =
+    typeof invoice.customer === 'string' ? invoice.customer : invoice.customer?.id;
+  if (!customerId) return;
+
+  const userId = await findUserIdByStripeCustomer(cfg, customerId);
+  if (!userId) return;
+
+  if (invoice.billing_reason === 'subscription_create') return;
+
+  await applyFocusPack(cfg, userId);
 }
 
 export default async function handler(
@@ -151,6 +209,9 @@ export default async function handler(
       case 'customer.subscription.updated':
       case 'customer.subscription.deleted':
         await handleSubscriptionChange(sb, event.data.object as Stripe.Subscription);
+        break;
+      case 'invoice.payment_succeeded':
+        await handleInvoicePaid(sb, event.data.object as Stripe.Invoice);
         break;
       default:
         break;

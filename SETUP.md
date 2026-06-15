@@ -142,15 +142,17 @@ Push your repo changes to GitHub so Vercel picks up:
 ### A. Stripe Dashboard
 
 1. [stripe.com](https://stripe.com) — stay in **Test mode**
-2. **Product catalog → Add product** (three products):
+2. **Product catalog** — you should have three **monthly** products:
 
-| Product | Price | Billing |
-|---------|-------|---------|
-| Flow Student | $5 | One-time |
-| Flow Studio | $20 | Recurring · Monthly |
-| Focus Pack | $10 | One-time |
+| Product | Your price | Billing |
+|---------|------------|---------|
+| Flow Student | $9.99/mo | Recurring · Monthly |
+| Flow Studio | $19.99/mo | Recurring · Monthly |
+| Focus Pack | $9.99/mo | Recurring · Monthly |
 
-3. Copy each **Price ID** (`price_...`)
+3. Copy each **Price ID** (`price_...`) into Vercel (see below).
+
+Run migration **`008_stripe_subscriptions.sql`** in Supabase SQL Editor (after 007).
 
 ### B. Webhook
 
@@ -159,7 +161,7 @@ Push your repo changes to GitHub so Vercel picks up:
 | Field | Value |
 |-------|--------|
 | URL | `https://flowstudy.app/api/stripe-webhook` |
-| Events | `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted` |
+| Events | `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.payment_succeeded` |
 
 Copy **Signing secret** (`whsec_...`)
 

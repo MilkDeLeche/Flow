@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import type { ServerSupabase } from './_auth.js';
+import type { CheckoutProduct } from './_stripeConfig.js';
 
 export type PlanTier = 'free' | 'student' | 'studio';
 
@@ -17,7 +18,9 @@ export async function getUserPlanRow(userId: string, cfg: ServerSupabase) {
 
   const { data, error } = await admin
     .from('user_plans')
-    .select('plan_tier, lifetime_student, stripe_customer_id, stripe_subscription_id')
+    .select(
+      'plan_tier, lifetime_student, stripe_customer_id, stripe_subscription_id, stripe_student_subscription_id, stripe_focus_subscription_id'
+    )
     .eq('user_id', userId)
     .maybeSingle();
 
@@ -64,6 +67,7 @@ export async function applyPlanFromStripe(
     lifetimeStudent?: boolean;
     stripeCustomerId?: string | null;
     stripeSubscriptionId?: string | null;
+    subscriptionProduct?: CheckoutProduct | null;
   }
 ): Promise<boolean> {
   const admin = adminClient(cfg);
@@ -75,6 +79,7 @@ export async function applyPlanFromStripe(
     p_lifetime_student: opts.lifetimeStudent ?? null,
     p_stripe_customer_id: opts.stripeCustomerId ?? null,
     p_stripe_subscription_id: opts.stripeSubscriptionId ?? null,
+    p_subscription_product: opts.subscriptionProduct ?? null,
   });
 
   if (error) {
@@ -85,9 +90,10 @@ export async function applyPlanFromStripe(
   return syncUserPlanMetadata(cfg, userId, opts.planTier);
 }
 
-export async function clearStudioSubscription(
+export async function clearPlanSubscription(
   cfg: ServerSupabase,
-  userId: string
+  userId: string,
+  product: CheckoutProduct
 ): Promise<boolean> {
   const admin = adminClient(cfg);
   if (!admin) return false;
@@ -95,13 +101,17 @@ export async function clearStudioSubscription(
   const row = await getUserPlanRow(userId, cfg);
   if (!row) return false;
 
-  const { error } = await admin.rpc('clear_studio_subscription', { p_user: userId });
+  const { error } = await admin.rpc('clear_plan_subscription', {
+    p_user: userId,
+    p_product: product,
+  });
   if (error) {
-    console.error('clear_studio_subscription failed:', error.message);
+    console.error('clear_plan_subscription failed:', error.message);
     return false;
   }
 
-  const nextTier: PlanTier = row.lifetime_student ? 'student' : 'free';
+  const refreshed = await getUserPlanRow(userId, cfg);
+  const nextTier = (refreshed?.plan_tier ?? 'free') as PlanTier;
   return syncUserPlanMetadata(cfg, userId, nextTier);
 }
 
@@ -144,7 +154,9 @@ export async function findUserIdByStripeSubscription(
   const { data, error } = await admin
     .from('user_plans')
     .select('user_id')
-    .eq('stripe_subscription_id', subscriptionId)
+    .or(
+      `stripe_subscription_id.eq.${subscriptionId},stripe_student_subscription_id.eq.${subscriptionId},stripe_focus_subscription_id.eq.${subscriptionId}`
+    )
     .maybeSingle();
 
   if (error || !data?.user_id) return null;
