@@ -91,10 +91,10 @@ export default function Uploader({
   return (
     <section className="max-w-[760px] mx-auto px-5 md:px-8 pt-10 md:pt-16 pb-16">
       <TextFade direction="up" staggerChildren={0.12}>
-        <h1 className="font-mondwest text-[#2c2c2c] text-[34px] md:text-[52px] leading-[0.98] mb-4">
+        <h1 className="font-mondwest text-ink text-[34px] md:text-[52px] leading-[0.98] mb-4">
           {isChapter ? t.addChapterTitle : t.uploadTitle}
         </h1>
-        <p className="text-[16px] md:text-[18px] text-[#444141] max-w-[560px] mb-8 leading-relaxed">
+        <p className="text-[16px] md:text-[18px] text-ink-secondary max-w-[560px] mb-8 leading-relaxed">
           {isChapter
             ? t.addChapterIntro(courseName ?? t.allMaterial)
             : t.uploadIntro}
@@ -103,7 +103,7 @@ export default function Uploader({
 
       <div className="space-y-5">
         <div>
-          <label className="block text-[13px] text-[#646464] mb-2">
+          <label className="block text-[13px] text-ink-secondary mb-2">
             {isChapter ? t.chapterTitleOptional : t.nameMaterial}
           </label>
           <input
@@ -114,16 +114,16 @@ export default function Uploader({
                 ? t.chapterTitlePlaceholder
                 : t.materialPlaceholder
             }
-            className="w-full px-4 py-3 text-[15px] bg-white border-2 border-[#dde3dd] rounded-xl outline-none focus:border-[#b8beb8] transition-colors"
+            className="w-full px-4 py-3 text-[15px] btn-outline border-2 rounded-xl outline-none focus:border-line-strong transition-colors"
           />
         </div>
 
         <div>
           <div className="flex items-center justify-between mb-2">
-            <label className="text-[13px] text-[#646464]">
+            <label className="text-[13px] text-ink-secondary">
               {t.pasteMaterial}
             </label>
-            <span className="text-[12px] text-[#b4b8b4]">
+            <span className="text-[12px] text-ink-muted">
               {material.length.toLocaleString()} {t.characters}
             </span>
           </div>
@@ -137,17 +137,17 @@ export default function Uploader({
             }}
             rows={9}
             placeholder={t.pastePlaceholder}
-            className="w-full px-4 py-3 text-[14px] leading-relaxed bg-white border-2 border-[#dde3dd] rounded-xl outline-none focus:border-[#b8beb8] transition-colors resize-y"
+            className="w-full px-4 py-3 text-[14px] leading-relaxed btn-outline border-2 rounded-xl outline-none focus:border-line-strong transition-colors resize-y"
           />
         </div>
 
         {allowUpload ? (
           <div className="flex items-center gap-3">
-            <span className="text-[13px] text-[#b4b8b4]">{t.or}</span>
+            <span className="text-[13px] text-ink-muted">{t.or}</span>
             <button
               onClick={() => fileRef.current?.click()}
               disabled={extracting}
-              className="inline-flex items-center gap-2 px-4 py-2.5 text-[14px] bg-white border-2 border-[#dde3dd] rounded-full hover:bg-[#eef1ed] transition-colors disabled:opacity-60"
+              className="inline-flex items-center gap-2 px-4 py-2.5 text-[14px] btn-outline border-2 rounded-full hover:bg-surface-muted transition-colors disabled:opacity-60"
             >
               {extracting ? (
                 <Loader2 size={16} className="animate-spin" />
@@ -157,7 +157,7 @@ export default function Uploader({
               {extracting ? t.readingFile : t.uploadFile}
             </button>
             {(material || pdfBase64) && sourceType !== 'paste' && (
-              <span className="inline-flex items-center gap-1.5 text-[13px] text-[#646464]">
+              <span className="inline-flex items-center gap-1.5 text-[13px] text-ink-secondary">
                 <FileText size={14} /> {t.loadedFrom} .{sourceType}
               </span>
             )}
@@ -170,14 +170,14 @@ export default function Uploader({
             />
           </div>
         ) : (
-          <p className="text-[12px] text-[#b4b8b4]">
+          <p className="text-[12px] text-ink-muted">
             {t.uploadLocked}
           </p>
         )}
 
         {!isChapter && (
           <div>
-            <label className="block text-[13px] text-[#646464] mb-2">
+            <label className="block text-[13px] text-ink-secondary mb-2">
               {t.startWith}
             </label>
             <div className="flex flex-wrap gap-2">
@@ -185,10 +185,10 @@ export default function Uploader({
                 <button
                   key={n}
                   onClick={() => setRoundSize(n)}
-                  className={`px-4 py-2 text-[14px] rounded-full border-2 transition-colors ${
+                  className={`px-4 py-2 text-[14px] transition-colors ${
                     roundSize === n
-                      ? 'bg-black text-white border-black'
-                      : 'bg-white text-[#2c2c2c] border-[#dde3dd] hover:bg-[#eef1ed]'
+                      ? 'btn-pill-active'
+                      : 'btn-pill'
                   }`}
                 >
                   {n} {t.questions}
@@ -200,7 +200,7 @@ export default function Uploader({
 
         {!isChapter && (
           <div>
-            <label className="block text-[13px] text-[#646464] mb-2">{t.mode}</label>
+            <label className="block text-[13px] text-ink-secondary mb-2">{t.mode}</label>
             <div className="flex flex-wrap gap-2">
               {(
                 [
@@ -212,17 +212,17 @@ export default function Uploader({
                   key={value}
                   onClick={() => setMode(value)}
                   title={desc}
-                  className={`px-4 py-2 text-[14px] rounded-full border-2 transition-colors ${
+                  className={`px-4 py-2 text-[14px] transition-colors ${
                     mode === value
-                      ? 'bg-black text-white border-black'
-                      : 'bg-white text-[#2c2c2c] border-[#dde3dd] hover:bg-[#eef1ed]'
+                      ? 'btn-pill-active'
+                      : 'btn-pill'
                   }`}
                 >
                   {label}
                 </button>
               ))}
             </div>
-            <p className="text-[12px] text-[#b4b8b4] mt-1.5">
+            <p className="text-[12px] text-ink-muted mt-1.5">
               {mode === 'practice'
                 ? t.practiceHint
                 : t.examHint}
@@ -231,7 +231,7 @@ export default function Uploader({
         )}
 
         {visionNote && (
-          <p className="text-[13.5px] text-[#2c2c2c] bg-[#eef1ed] border border-[#dde3dd] rounded-lg px-4 py-3">
+          <p className="text-[13.5px] text-ink bg-surface-muted border border-line rounded-lg px-4 py-3">
             📐 {visionNote}
           </p>
         )}
@@ -255,19 +255,19 @@ export default function Uploader({
               })
             }
             disabled={!canStart}
-            className="px-6 py-3 text-[15px] bg-black text-white rounded-full hover:bg-[#2c2c2c] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            className="btn-primary px-6 py-3 text-[15px] disabled:cursor-not-allowed disabled:opacity-40"
           >
             {isChapter ? t.saveChapter : t.startQuiz(roundSize, mode)}
           </button>
           {!canStart && (
-            <span className="text-[13px] text-[#b4b8b4]">
+            <span className="text-[13px] text-ink-muted">
               {t.addMaterial}
             </span>
           )}
         </div>
 
         {!supabaseEnabled && (
-          <p className="text-[12px] text-[#b4b8b4] pt-2">
+          <p className="text-[12px] text-ink-muted pt-2">
             {t.historyOff}
           </p>
         )}

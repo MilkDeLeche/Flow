@@ -71,7 +71,7 @@ export default function Landing({ onEnter }: Props) {
       <div className="lg:ml-[240px]">
         <Hero onEnter={onEnter} />
         <VideoSection />
-        <FeaturesGrid />
+        <FeaturesGrid onEnter={onEnter} />
         <CardsCarousel />
         <PricingSection
           isLoggedIn={!!session}

@@ -15,6 +15,7 @@ import {
   daysUntil,
   deleteStudyPlan,
   listStudyPlans,
+  planPastelColor,
   todayString,
   toggleStudySession,
   type StudyPlan,
@@ -166,44 +167,44 @@ export default function Dashboard({ onOpenCourse, refreshKey }: Props) {
   return (
     <div className="mx-auto max-w-[1040px] px-5 pb-16 pt-10 md:px-8">
       <div className="mb-8">
-        <h1 className="mb-2 text-[32px] font-semibold leading-tight text-[#2c2c2c] md:text-[42px]">
+        <h1 className="mb-2 text-[32px] font-semibold leading-tight text-ink md:text-[42px]">
           {t.plannerTitle}
         </h1>
-        <p className="max-w-[680px] text-[15px] leading-relaxed text-[#646464]">
+        <p className="max-w-[680px] text-[15px] leading-relaxed text-ink-secondary">
           {t.plannerIntro}
         </p>
       </div>
 
       <div className="mb-6 grid gap-3 sm:grid-cols-3">
-        <div className="rounded-2xl border border-[#dde3dd] bg-white p-4">
-          <p className="mb-1 flex items-center gap-2 text-[12px] text-[#646464]">
+        <div className="rounded-2xl border border-line bg-surface-card p-4">
+          <p className="mb-1 flex items-center gap-2 text-[12px] text-ink-secondary">
             <CalendarDays size={14} /> {t.upcomingTests}
           </p>
-          <p className="text-[28px] font-semibold text-[#2c2c2c]">{nextPlans.length}</p>
+          <p className="text-[28px] font-semibold text-ink">{nextPlans.length}</p>
         </div>
-        <div className="rounded-2xl border border-[#dde3dd] bg-white p-4">
-          <p className="mb-1 flex items-center gap-2 text-[12px] text-[#646464]">
+        <div className="rounded-2xl border border-line bg-surface-card p-4">
+          <p className="mb-1 flex items-center gap-2 text-[12px] text-ink-secondary">
             <Clock size={14} /> {t.dueThisWeek}
           </p>
-          <p className="text-[28px] font-semibold text-[#2c2c2c]">{dueThisWeek}</p>
+          <p className="text-[28px] font-semibold text-ink">{dueThisWeek}</p>
         </div>
-        <div className="rounded-2xl border border-[#dde3dd] bg-white p-4">
-          <p className="mb-1 flex items-center gap-2 text-[12px] text-[#646464]">
+        <div className="rounded-2xl border border-line bg-surface-card p-4">
+          <p className="mb-1 flex items-center gap-2 text-[12px] text-ink-secondary">
             <CheckCircle2 size={14} /> {t.readiness}
           </p>
-          <p className="text-[28px] font-semibold text-[#2c2c2c]">
+          <p className="text-[28px] font-semibold text-ink">
             {averageReadiness}%
           </p>
         </div>
       </div>
 
-      <div className="mb-8 rounded-2xl border-2 border-[#dee2de] bg-[#fbfcf8] p-5">
-        <h2 className="mb-4 text-[15px] font-medium text-[#2c2c2c]">{t.addTestDay}</h2>
-        <div className="grid gap-3 md:grid-cols-[1.2fr_1fr_150px_150px_auto]">
+      <div className="mb-8 rounded-2xl border-2 border-line bg-surface-muted p-5">
+        <h2 className="mb-4 text-[15px] font-medium text-ink">{t.addTestDay}</h2>
+        <div className="flex flex-wrap gap-3">
           <select
             value={courseId}
             onChange={(e) => setCourseId(e.target.value)}
-            className="h-11 rounded-xl border-2 border-[#dde3dd] bg-white px-3 text-[14px] outline-none focus:border-[#b8beb8]"
+            className="input-field h-11 min-w-0 flex-[1_1_12rem] px-3 text-[14px] sm:flex-[1_1_10rem]"
           >
             {courses.length === 0 ? (
               <option value="">{t.noCoursesPlanner}</option>
@@ -219,19 +220,19 @@ export default function Dashboard({ onOpenCourse, refreshKey }: Props) {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder={t.testNamePlaceholder}
-            className="h-11 rounded-xl border-2 border-[#dde3dd] bg-white px-3 text-[14px] outline-none focus:border-[#b8beb8]"
+            className="input-field h-11 min-w-0 flex-[1_1_12rem] px-3 text-[14px] sm:flex-[2_1_14rem]"
           />
           <input
             type="date"
             min={todayString()}
             value={testDate}
             onChange={(e) => setTestDate(e.target.value)}
-            className="h-11 rounded-xl border-2 border-[#dde3dd] bg-white px-3 text-[14px] outline-none focus:border-[#b8beb8]"
+            className="input-field h-11 min-w-0 flex-[1_1_9.5rem] px-3 text-[14px] [color-scheme:light] dark:[color-scheme:dark]"
           />
           <select
             value={quizzesPerWeek}
             onChange={(e) => setQuizzesPerWeek(Number(e.target.value))}
-            className="h-11 rounded-xl border-2 border-[#dde3dd] bg-white px-3 text-[14px] outline-none focus:border-[#b8beb8]"
+            className="input-field h-11 min-w-0 flex-[1_1_9.5rem] px-3 text-[14px]"
           >
             {[2, 3, 4, 5].map((n) => (
               <option key={n} value={n}>
@@ -242,7 +243,7 @@ export default function Dashboard({ onOpenCourse, refreshKey }: Props) {
           <button
             onClick={addPlan}
             disabled={!courses.length}
-            className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-black px-5 text-[14px] text-white transition-colors hover:bg-[#2c2c2c] disabled:opacity-40"
+            className="btn-primary h-11 w-full min-w-0 flex-[1_1_100%] gap-2 px-5 text-[14px] disabled:opacity-40 sm:w-auto sm:flex-[0_0_auto]"
           >
             <Plus size={15} /> {t.plan}
           </button>
@@ -250,72 +251,80 @@ export default function Dashboard({ onOpenCourse, refreshKey }: Props) {
         {error && <p className="mt-3 text-[13px] text-red-600">{error}</p>}
       </div>
 
-      <section className="mb-8 rounded-2xl border border-[#dde3dd] bg-white p-4">
+      <section className="mb-8 rounded-2xl border border-line bg-surface-card p-4">
         <div className="mb-3 flex items-center justify-between gap-3">
-          <h2 className="text-[16px] font-semibold text-[#2c2c2c]">{monthLabel}</h2>
+          <h2 className="text-[16px] font-semibold text-ink">{monthLabel}</h2>
           <div className="flex gap-2">
             <button
               onClick={() => shiftMonth(-1)}
-              className="h-9 rounded-full border-2 border-[#dde3dd] px-3 text-[13px] transition-colors hover:bg-[#eef1ed]"
+              className="btn-outline h-9 px-3 text-[13px]"
             >
               Prev
             </button>
             <button
               onClick={() => shiftMonth(1)}
-              className="h-9 rounded-full border-2 border-[#dde3dd] px-3 text-[13px] transition-colors hover:bg-[#eef1ed]"
+              className="btn-outline h-9 px-3 text-[13px]"
             >
               Next
             </button>
           </div>
         </div>
-        <div className="grid grid-cols-7 gap-1 text-center text-[11px] font-medium uppercase text-[#8a8f8a]">
-          {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
-            <span key={day} className="py-1">
-              {day}
-            </span>
-          ))}
-        </div>
-        <div className="grid grid-cols-7 gap-1">
-          {monthCells.map((cell) => {
-            const selected = cell.value === testDate;
-            return (
-              <button
-                key={cell.value}
-                onClick={() => setTestDate(cell.value)}
-                className={`min-h-[72px] rounded-xl border p-2 text-left transition-colors ${
-                  selected
-                    ? 'border-black bg-[#f2f4ef]'
-                    : cell.inMonth
-                    ? 'border-[#e4e8e2] bg-white hover:bg-[#f7f8f5]'
-                    : 'border-[#edf0eb] bg-[#fbfcf8] text-[#b4b8b4]'
-                }`}
-              >
+        <div className="-mx-1 overflow-x-auto px-1">
+          <div className="min-w-[280px]">
+            <div className="grid grid-cols-7 gap-1 text-center text-[11px] font-medium uppercase text-ink-muted">
+              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
+                <span key={day} className="py-1">
+                  {day}
+                </span>
+              ))}
+            </div>
+            <div className="grid grid-cols-7 gap-1">
+              {monthCells.map((cell) => {
+                const selected = cell.value === testDate;
+                return (
+                  <button
+                    key={cell.value}
+                    onClick={() => setTestDate(cell.value)}
+                    className={`min-h-[56px] rounded-xl border p-1.5 text-left transition-colors sm:min-h-[72px] sm:p-2 ${
+                      selected
+                        ? 'border-accent bg-surface-muted'
+                        : cell.inMonth
+                        ? 'border-line bg-surface-card hover:bg-surface-muted'
+                        : 'border-line bg-surface-muted text-ink-muted'
+                    }`}
+                  >
                 <span className="text-[12px] font-medium">{cell.date.getDate()}</span>
                 <span className="mt-1 block space-y-1">
-                  {cell.plans.slice(0, 2).map((plan) => (
-                    <span
-                      key={plan.id}
-                      className="block truncate rounded bg-[#eef1ed] px-1.5 py-0.5 text-[11px] text-[#2c2c2c]"
-                    >
-                      {plan.courseName}
-                    </span>
-                  ))}
+                  {cell.plans.slice(0, 2).map((plan) => {
+                    const pastel = planPastelColor(plan);
+                    return (
+                      <span
+                        key={plan.id}
+                        className={`block truncate rounded px-1.5 py-0.5 text-[11px] font-medium ${pastel.chip}`}
+                        title={plan.title}
+                      >
+                        {plan.title}
+                      </span>
+                    );
+                  })}
                   {cell.plans.length > 2 && (
-                    <span className="block text-[11px] text-[#646464]">
+                    <span className="block text-[11px] text-ink-secondary">
                       +{cell.plans.length - 2}
                     </span>
                   )}
                 </span>
-              </button>
-            );
-          })}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </div>
       </section>
 
       {plans.length === 0 ? (
-        <div className="rounded-2xl border-2 border-dashed border-[#dde3dd] px-5 py-10 text-center">
-          <p className="text-[15px] font-medium text-[#2c2c2c]">{t.noPlans}</p>
-          <p className="mt-1 text-[13px] text-[#8a8f8a]">{t.noPlansHint}</p>
+        <div className="rounded-2xl border-2 border-dashed border-line px-5 py-10 text-center">
+          <p className="text-[15px] font-medium text-ink">{t.noPlans}</p>
+          <p className="mt-1 text-[13px] text-ink-muted">{t.noPlansHint}</p>
         </div>
       ) : (
         <div className="space-y-4">
@@ -323,13 +332,17 @@ export default function Dashboard({ onOpenCourse, refreshKey }: Props) {
             const sessions = buildStudySessions(plan);
             const ready = readiness(plan);
             const left = daysUntil(plan.testDate);
+            const pastel = planPastelColor(plan);
             return (
-              <section key={plan.id} className="rounded-2xl border border-[#dde3dd] bg-white p-5">
+              <section
+                key={plan.id}
+                className={`rounded-2xl border border-line border-l-4 bg-surface-card p-5 ${pastel.border}`}
+              >
                 <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div>
-                    <p className="mb-1 text-[12px] text-[#646464]">{plan.courseName}</p>
-                    <h3 className="text-[20px] font-semibold text-[#2c2c2c]">{plan.title}</h3>
-                    <p className="mt-1 text-[13px] text-[#646464]">
+                    <p className="mb-1 text-[12px] text-ink-secondary">{plan.courseName}</p>
+                    <h3 className="text-[20px] font-semibold text-ink">{plan.title}</h3>
+                    <p className="mt-1 text-[13px] text-ink-secondary">
                       {fmtDate(plan.testDate)} -{' '}
                       {left === 0 ? t.today : t.daysLeft(Math.max(0, left))}
                     </p>
@@ -337,23 +350,23 @@ export default function Dashboard({ onOpenCourse, refreshKey }: Props) {
                   <div className="flex flex-wrap gap-2">
                     <button
                       onClick={() => openPlanCourse(plan)}
-                      className="inline-flex items-center gap-1.5 rounded-full border-2 border-[#dde3dd] px-4 py-2 text-[13px] transition-colors hover:bg-[#eef1ed]"
+                      className="btn-outline gap-1.5 px-4 py-2 text-[13px]"
                     >
                       <BookOpen size={14} /> {t.openCourse}
                     </button>
                     <button
                       onClick={() => remove(plan.id)}
                       title={t.deletePlan}
-                      className="inline-flex items-center gap-1.5 rounded-full border-2 border-[#fde2e2] px-3 py-2 text-[13px] text-red-600 transition-colors hover:bg-red-50"
+                      className="inline-flex items-center gap-1.5 rounded-full border-2 border-red-300 px-3 py-2 text-[13px] text-red-600 transition-colors hover:bg-red-950/20 dark:border-red-800 dark:text-red-400"
                     >
                       <Trash2 size={14} />
                     </button>
                   </div>
                 </div>
 
-                <div className="mb-4 h-2 overflow-hidden rounded-full bg-[#eef1ed]">
+                <div className="mb-4 h-2 overflow-hidden rounded-full bg-surface-muted">
                   <div
-                    className="h-full rounded-full bg-black transition-all"
+                    className={`h-full rounded-full transition-all ${pastel.progress}`}
                     style={{ width: `${ready}%` }}
                   />
                 </div>
@@ -367,22 +380,22 @@ export default function Dashboard({ onOpenCourse, refreshKey }: Props) {
                         onClick={() => toggle(plan.id, session.key)}
                         className={`flex items-center justify-between rounded-xl border px-3 py-3 text-left transition-colors ${
                           done
-                            ? 'border-[#cfe4d3] bg-[#f0f8f1]'
-                            : 'border-[#e8e8e8] hover:bg-[#f7f8f5]'
+                            ? 'border-line-strong bg-surface-muted'
+                            : 'border-line bg-surface-card hover:bg-surface-muted'
                         }`}
                       >
                         <span>
-                          <span className="block text-[13px] font-medium text-[#2c2c2c]">
+                          <span className="block text-[13px] font-medium text-ink">
                             {session.label}
                           </span>
-                          <span className="text-[12px] text-[#646464]">
+                          <span className="text-[12px] text-ink-secondary">
                             {fmtDate(session.date)}
                           </span>
                         </span>
                         {done ? (
                           <CheckCircle2 size={18} className="text-[#2f7d45]" />
                         ) : (
-                          <Circle size={18} className="text-[#b4b8b4]" />
+                          <Circle size={18} className="text-ink-muted" />
                         )}
                       </button>
                     );

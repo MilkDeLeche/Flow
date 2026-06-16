@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
+import BackgroundVideo from '../BackgroundVideo';
 import { useLocale } from '../../lib/i18n';
 
 /**
@@ -20,30 +21,40 @@ export default function CardsCarousel() {
       text: t.carouselStudentsDesc,
       from: '#5b6e57',
       to: '#39492f',
+      video:
+        'https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260422_191657_800d4e1f-7ab3-41af-90b6-9bd3039eb294.mp4',
     },
     {
       category: t.carouselExam,
       text: t.carouselExamDesc,
       from: '#8a5a44',
       to: '#5e342a',
+      video:
+        'https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260328_115001_bcdaa3b4-03de-47e7-ad63-ae3e392c32d4.mp4',
     },
     {
       category: t.carouselSubjects,
       text: t.carouselSubjectsDesc,
       from: '#46566b',
       to: '#2b3340',
+      video:
+        'https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260324_151826_c7218672-6e92-402c-9e45-f1e0f454bdc4.mp4',
     },
     {
       category: t.carouselLanguage,
       text: t.carouselLanguageDesc,
       from: '#6b4a63',
       to: '#3f2b3a',
+      video:
+        'https://stream.mux.com/blULaJm2RMbAmsrwxLrBdgEx9yI1do2yM89vHTkdA6I.m3u8',
     },
     {
       category: t.carouselPrivate,
       text: t.carouselPrivateDesc,
       from: '#2f4858',
       to: '#1b2a33',
+      video:
+        'https://stream.mux.com/01RFgQzREU151pcAPmtrmfOaaPleIUBpff02V34zduXXM.m3u8',
     },
   ];
 
@@ -133,11 +144,23 @@ export default function CardsCarousel() {
             >
               <div
                 className="group relative h-[420px] overflow-hidden rounded-2xl md:h-[460px]"
-                style={{
-                  backgroundImage: `linear-gradient(135deg, ${c.from}, ${c.to})`,
-                }}
+                style={
+                  c.video
+                    ? undefined
+                    : { backgroundImage: `linear-gradient(135deg, ${c.from}, ${c.to})` }
+                }
               >
-                <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-white/10 transition-transform duration-700 group-hover:scale-105" />
+                {c.video ? (
+                  <div className="absolute inset-0 transition-transform duration-700 group-hover:scale-105">
+                    <BackgroundVideo
+                      src={c.video}
+                      className="absolute inset-0 h-full w-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-white/10" />
+                  </div>
+                ) : (
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-white/10 transition-transform duration-700 group-hover:scale-105" />
+                )}
                 <div className="absolute bottom-0 left-0 p-6 text-white">
                   <span className="text-[12px] uppercase tracking-wide text-white/70">
                     {c.category}

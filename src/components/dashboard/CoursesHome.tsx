@@ -79,26 +79,26 @@ export default function CoursesHome({
     <div className="mx-auto max-w-[1180px] px-4 pb-16 pt-6 md:px-6">
       <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p className="mb-1 text-[12px] uppercase tracking-[0.1em] text-[#8a908a]">
+          <p className="mb-1 text-[12px] uppercase tracking-[0.1em] text-ink-muted">
             {t.courseWorkspace}
           </p>
-          <h1 className="text-[28px] font-semibold leading-tight text-[#242724] md:text-[34px]">
+          <h1 className="text-[28px] font-semibold leading-tight text-ink md:text-[34px]">
             {t.yourCourses}
           </h1>
-          <p className="mt-1 max-w-[680px] text-[14px] leading-relaxed text-[#646a64]">
+          <p className="mt-1 max-w-[680px] text-[14px] leading-relaxed text-ink-secondary">
             {t.coursesIntro}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
           <button
             onClick={onQuickQuiz}
-            className="inline-flex h-10 items-center gap-2 rounded-full border border-[#dfe4df] bg-white px-4 text-[13px] text-[#3f443f] transition-colors hover:bg-[#f2f4f0]"
+            className="btn-outline h-10 gap-2 px-4 text-[13px]"
           >
             <Sparkles size={15} /> {t.quickQuizShort}
           </button>
           <button
             onClick={() => setAdding((open) => !open)}
-            className="inline-flex h-10 items-center gap-2 rounded-full bg-[#242724] px-4 text-[13px] text-white transition-colors hover:bg-[#3a3f3a]"
+            className="btn-primary h-10 gap-2 px-4 text-[13px]"
           >
             <Plus size={15} /> {t.newCourse}
           </button>
@@ -106,23 +106,23 @@ export default function CoursesHome({
       </div>
 
       <div className="mb-5 grid gap-3 sm:grid-cols-3">
-        <div className="rounded-xl border border-[#dfe4df] bg-white px-4 py-3">
-          <p className="mb-2 flex items-center gap-2 text-[12px] text-[#6d736d]">
+        <div className="rounded-xl border border-line bg-surface-card px-4 py-3">
+          <p className="mb-2 flex items-center gap-2 text-[12px] text-ink-muted">
             <BookOpen size={14} /> {t.activeCourses}
           </p>
-          <p className="text-[26px] font-semibold text-[#242724]">{activeCourses}</p>
+          <p className="text-[26px] font-semibold text-ink">{activeCourses}</p>
         </div>
-        <div className="rounded-xl border border-[#dfe4df] bg-white px-4 py-3">
-          <p className="mb-2 flex items-center gap-2 text-[12px] text-[#6d736d]">
+        <div className="rounded-xl border border-line bg-surface-card px-4 py-3">
+          <p className="mb-2 flex items-center gap-2 text-[12px] text-ink-muted">
             <FileText size={14} /> {t.chapterModules}
           </p>
-          <p className="text-[26px] font-semibold text-[#242724]">{chapterTotal}</p>
+          <p className="text-[26px] font-semibold text-ink">{chapterTotal}</p>
         </div>
-        <div className="rounded-xl border border-[#dfe4df] bg-white px-4 py-3">
-          <p className="mb-2 flex items-center gap-2 text-[12px] text-[#6d736d]">
+        <div className="rounded-xl border border-line bg-surface-card px-4 py-3">
+          <p className="mb-2 flex items-center gap-2 text-[12px] text-ink-muted">
             <CheckCircle2 size={14} /> {t.finishedCourses}
           </p>
-          <p className="text-[26px] font-semibold text-[#242724]">{finishedCourses}</p>
+          <p className="text-[26px] font-semibold text-ink">{finishedCourses}</p>
         </div>
       </div>
 
@@ -140,27 +140,27 @@ export default function CoursesHome({
         </div>
       )}
 
-      <section className="overflow-hidden rounded-xl border border-[#dfe4df] bg-white">
-        <div className="flex flex-col gap-3 border-b border-[#e7ebe7] px-4 py-3 md:flex-row md:items-center md:justify-between">
+      <section className="overflow-hidden rounded-xl border border-line bg-surface-card">
+        <div className="flex flex-col gap-3 border-b border-line px-4 py-3 md:flex-row md:items-center md:justify-between">
           <div>
-            <h2 className="text-[15px] font-semibold text-[#242724]">{t.courseList}</h2>
-            <p className="mt-0.5 text-[12px] text-[#7b827b]">{t.courseListHint}</p>
+            <h2 className="text-[15px] font-semibold text-ink">{t.courseList}</h2>
+            <p className="mt-0.5 text-[12px] text-ink-muted">{t.courseListHint}</p>
           </div>
           <label className="relative block w-full md:w-[280px]">
             <Search
               size={15}
-              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#8a908a]"
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-muted"
             />
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder={t.searchCourses}
-              className="h-10 w-full rounded-lg border border-[#dfe4df] bg-[#fbfcf8] pl-9 pr-3 text-[13px] outline-none transition-colors focus:border-[#b8beb8]"
+              className="input-field h-10 rounded-lg pl-9 pr-3 text-[13px]"
             />
           </label>
         </div>
 
-        <div className="hidden grid-cols-[minmax(0,1.6fr)_0.7fr_0.7fr_0.8fr_80px] gap-3 border-b border-[#edf0ed] px-4 py-2 text-[11px] uppercase tracking-[0.08em] text-[#8a908a] lg:grid">
+        <div className="hidden grid-cols-[minmax(0,1.6fr)_0.7fr_0.7fr_0.8fr_80px] gap-3 border-b border-line px-4 py-2 text-[11px] uppercase tracking-[0.08em] text-ink-muted lg:grid">
           <span>{t.course}</span>
           <span>{t.chapters}</span>
           <span>{t.status}</span>
@@ -170,13 +170,13 @@ export default function CoursesHome({
 
         {loaded && visibleCourses.length === 0 ? (
           <div className="px-4 py-10 text-center">
-            <p className="text-[14px] text-[#8a908a]">
+            <p className="text-[14px] text-ink-muted">
               {courses.length ? t.noCourseMatches : t.noCourses}
             </p>
             {!courses.length && (
               <button
                 onClick={() => setAdding(true)}
-                className="mt-4 inline-flex h-10 items-center gap-2 rounded-full bg-[#242724] px-4 text-[13px] text-white transition-colors hover:bg-[#3a3f3a]"
+                className="mt-4 btn-primary h-10 gap-2 px-4 text-[13px]"
               >
                 <Plus size={15} /> {t.newCourse}
               </button>
@@ -188,26 +188,26 @@ export default function CoursesHome({
               <li key={course.id}>
                 <button
                   onClick={() => onOpenCourse(course)}
-                  className="grid w-full gap-3 px-4 py-4 text-left transition-colors hover:bg-[#fbfcf8] lg:grid-cols-[minmax(0,1.6fr)_0.7fr_0.7fr_0.8fr_80px] lg:items-center"
+                  className="grid w-full gap-3 px-4 py-4 text-left transition-colors hover:bg-surface-muted lg:grid-cols-[minmax(0,1.6fr)_0.7fr_0.7fr_0.8fr_80px] lg:items-center"
                 >
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#eef1ed] text-[13px] font-semibold text-[#3f443f]">
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-surface-muted text-[13px] font-semibold text-ink">
                         {course.name.trim().slice(0, 1).toUpperCase() || 'F'}
                       </span>
                       <div className="min-w-0">
-                        <p className="truncate text-[15px] font-semibold text-[#242724]">
+                        <p className="truncate text-[15px] font-semibold text-ink">
                           {course.name}
                         </p>
-                        <p className="line-clamp-1 text-[12px] text-[#747a74]">
+                        <p className="line-clamp-1 text-[12px] text-ink-muted">
                           {course.description || t.noCourseDescription}
                         </p>
                       </div>
                     </div>
                   </div>
 
-                  <p className="flex items-center gap-2 text-[13px] text-[#555b55]">
-                    <FileText size={14} className="text-[#8a908a]" />
+                  <p className="flex items-center gap-2 text-[13px] text-ink-secondary">
+                    <FileText size={14} className="text-ink-muted" />
                     {course.chapterCount}{' '}
                     {course.chapterCount === 1 ? t.chapter : t.chapters.toLowerCase()}
                   </p>
@@ -216,8 +216,8 @@ export default function CoursesHome({
                     <span
                       className={`inline-flex h-7 items-center gap-1.5 rounded-full px-2.5 text-[12px] ${
                         course.finishedAt
-                          ? 'bg-[#edf7ef] text-[#2f6f3c]'
-                          : 'bg-[#f4f1e8] text-[#7a632d]'
+                          ? 'bg-[#edf7ef] text-[#2f6f3c] dark:bg-green-950/40 dark:text-green-400'
+                          : 'bg-[#f4f1e8] text-[#7a632d] dark:bg-amber-950/40 dark:text-amber-400'
                       }`}
                     >
                       {course.finishedAt ? <CheckCircle2 size={13} /> : <Clock3 size={13} />}
@@ -225,11 +225,11 @@ export default function CoursesHome({
                     </span>
                   </p>
 
-                  <p className="text-[13px] text-[#646a64]">
+                  <p className="text-[13px] text-ink-secondary">
                     {[course.semester, course.year].filter(Boolean).join(' ') || t.noTerm}
                   </p>
 
-                  <span className="inline-flex justify-end text-[#646a64]">
+                  <span className="inline-flex justify-end text-ink-secondary">
                     <ArrowRight size={17} />
                   </span>
                 </button>

@@ -414,7 +414,7 @@ export default function App() {
   if (authRequired && authLoading) {
     return (
       <div className="min-h-screen bg-surface flex items-center justify-center">
-        <Loader2 size={28} className="animate-spin text-[#646464]" />
+        <Loader2 size={28} className="animate-spin text-ink-secondary" />
       </div>
     );
   }
@@ -521,13 +521,13 @@ export default function App() {
           <div className="max-w-[760px] mx-auto px-5 md:px-8 pt-6">
             <button
               onClick={() => setView(uploadCourseId ? 'course' : 'home')}
-              className="inline-flex items-center gap-1.5 text-[14px] text-[#646464] transition-colors hover:text-[#2c2c2c]"
+              className="inline-flex items-center gap-1.5 text-[14px] text-ink-secondary transition-colors hover:text-ink"
             >
               <ArrowLeft size={15} /> {uploadCourseId ? t.backToCourse : t.back}
             </button>
             {uploadCourseId && currentCourse && (
-              <p className="mt-3 text-[13px] text-[#646464]">
-                {t.addChapterTo} <b className="text-[#2c2c2c]">{currentCourse.name}</b>
+              <p className="mt-3 text-[13px] text-ink-secondary">
+                {t.addChapterTo} <b className="text-ink">{currentCourse.name}</b>
               </p>
             )}
             <Uploader
@@ -551,23 +551,23 @@ export default function App() {
                     onClick={() =>
                       runRound(roundSize, material, materialId, title, pdfBase64, 'mixed', mode)
                     }
-                    className="px-5 py-3 text-[15px] bg-black text-white rounded-full hover:bg-[#2c2c2c] transition-colors"
+                    className="btn-primary px-5 py-3 text-[15px]"
                   >
                     {t.tryAgain}
                   </button>
                   <button
                     onClick={() => setView(roundCourse ? 'course' : 'home')}
-                    className="px-5 py-3 text-[15px] bg-white border-2 border-[#dde3dd] rounded-full hover:bg-[#eef1ed] transition-colors"
+                    className="px-5 py-3 text-[15px] btn-outline border-2 rounded-full hover:bg-surface-muted transition-colors"
                   >
                     {t.back}
                   </button>
                 </div>
               </>
             ) : (
-              <div className="flex flex-col items-center gap-4 text-[#646464]">
+              <div className="flex flex-col items-center gap-4 text-ink-secondary">
                 <Loader2 size={28} className="animate-spin" />
                 <p className="text-[16px]">{t.loadingQuiz(roundSize)}</p>
-                <p className="text-[13px] text-[#b4b8b4]">
+                <p className="text-[13px] text-ink-muted">
                   {t.loadingQuizHint}
                 </p>
               </div>

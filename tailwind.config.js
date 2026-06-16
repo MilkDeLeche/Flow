@@ -20,6 +20,7 @@ export default {
         'accent-ink': 'var(--accent-ink)',
         highlight: 'var(--highlight)',
         'highlight-strong': 'var(--highlight-strong)',
+        'reader-shadow': 'var(--shadow-card)',
         background: 'var(--surface)',
         'text-primary': 'var(--ink)',
         'text-secondary': 'var(--ink-secondary)',

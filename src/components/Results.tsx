@@ -45,11 +45,11 @@ export default function Results({
   return (
     <section className="max-w-[760px] mx-auto px-5 md:px-8 pt-10 pb-16">
       <TextFade direction="up" staggerChildren={0.1}>
-        <p className="text-[13px] text-[#b4b8b4] mb-1 truncate">{title}</p>
-        <h1 className="font-mondwest text-[#2c2c2c] text-[40px] md:text-[60px] leading-[0.95] mb-2">
+        <p className="text-[13px] text-ink-muted mb-1 truncate">{title}</p>
+        <h1 className="font-mondwest text-ink text-[40px] md:text-[60px] leading-[0.95] mb-2">
           {score}/{total}
         </h1>
-        <p className="text-[16px] text-[#444141] mb-8">
+        <p className="text-[16px] text-ink-secondary mb-8">
           {pct}% · {verdict}
         </p>
       </TextFade>
@@ -59,14 +59,14 @@ export default function Results({
         <div className="flex flex-wrap gap-3 mb-12">
           <button
             onClick={onRetake}
-            className="inline-flex items-center gap-2 px-5 py-3 text-[15px] bg-black text-white rounded-full hover:bg-[#2c2c2c] transition-colors"
+            className="btn-primary gap-2 px-5 py-3 text-[15px]"
           >
             <RotateCcw size={16} />
             {t.drillMistakes}
           </button>
           <button
             onClick={onNewMaterial}
-            className="inline-flex items-center gap-2 px-5 py-3 text-[15px] bg-white border-2 border-[#dde3dd] rounded-full hover:bg-[#eef1ed] transition-colors"
+            className="btn-outline gap-2 px-5 py-3 text-[15px]"
           >
             {t.done}
           </button>
@@ -78,7 +78,7 @@ export default function Results({
         {nextSize ? (
           <button
             onClick={() => onRound(nextSize)}
-            className="inline-flex items-center gap-2 px-5 py-3 text-[15px] bg-black text-white rounded-full hover:bg-[#2c2c2c] transition-colors"
+            className="btn-primary gap-2 px-5 py-3 text-[15px]"
           >
             {t.nextRound(nextSize)}
             <ArrowUpRight size={16} />
@@ -86,7 +86,7 @@ export default function Results({
         ) : (
           <button
             onClick={() => onRound(50)}
-            className="inline-flex items-center gap-2 px-5 py-3 text-[15px] bg-black text-white rounded-full hover:bg-[#2c2c2c] transition-colors"
+            className="btn-primary gap-2 px-5 py-3 text-[15px]"
           >
             {t.another50}
             <ArrowUpRight size={16} />
@@ -94,14 +94,14 @@ export default function Results({
         )}
         <button
           onClick={onRetake}
-          className="inline-flex items-center gap-2 px-5 py-3 text-[15px] bg-white border-2 border-[#dde3dd] rounded-full hover:bg-[#eef1ed] transition-colors"
+          className="btn-outline gap-2 px-5 py-3 text-[15px]"
         >
           <RotateCcw size={16} />
           {t.retake(roundSize)}
         </button>
         <button
           onClick={onNewMaterial}
-          className="inline-flex items-center gap-2 px-5 py-3 text-[15px] bg-white border-2 border-[#dde3dd] rounded-full hover:bg-[#eef1ed] transition-colors"
+          className="btn-outline gap-2 px-5 py-3 text-[15px]"
         >
           <FilePlus2 size={16} />
           {t.newMaterial}
@@ -110,16 +110,14 @@ export default function Results({
 
       {/* Other round sizes */}
       <div className="mb-12">
-        <p className="text-[13px] text-[#646464] mb-2">{t.jumpRound}</p>
+        <p className="text-[13px] text-ink-secondary mb-2">{t.jumpRound}</p>
         <div className="flex flex-wrap gap-2">
           {ROUND_SIZES.map((n) => (
             <button
               key={n}
               onClick={() => onRound(n)}
-              className={`px-4 py-2 text-[14px] rounded-full border-2 transition-colors ${
-                n === roundSize
-                  ? 'border-[#b8beb8] bg-[#eef1ed] text-[#2c2c2c]'
-                  : 'border-[#dde3dd] bg-white text-[#2c2c2c] hover:bg-[#eef1ed]'
+              className={`px-4 py-2 text-[14px] transition-colors ${
+                n === roundSize ? 'btn-pill-active' : 'btn-pill'
               }`}
             >
               {n}
@@ -131,7 +129,7 @@ export default function Results({
       )}
 
       {/* Review */}
-      <h2 className="font-mondwest text-[#2c2c2c] text-[24px] md:text-[28px] mb-5">
+      <h2 className="font-mondwest text-ink text-[24px] md:text-[28px] mb-5">
         {t.review}
       </h2>
       <div className="space-y-6">
@@ -141,7 +139,7 @@ export default function Results({
           return (
             <div
               key={qi}
-              className="border-2 border-[#dee2de] rounded-2xl p-5"
+              className="border-2 border-line rounded-2xl p-5"
             >
               <div className="flex items-start gap-2 mb-3">
                 <span
@@ -155,7 +153,7 @@ export default function Results({
                     <X size={13} className="text-red-500" />
                   )}
                 </span>
-                <h3 className="text-[16px] font-medium text-[#2c2c2c] leading-snug">
+                <h3 className="text-[16px] font-medium text-ink leading-snug">
                   {qi + 1}. <MathText text={q.question} />
                 </h3>
               </div>
@@ -171,7 +169,7 @@ export default function Results({
                             ? 'text-green-700 font-medium'
                             : isChosen
                             ? 'text-red-600'
-                            : 'text-[#646464]'
+                            : 'text-ink-secondary'
                         }`}
                       >
                         {String.fromCharCode(65 + oi)}. <MathText text={opt} />
@@ -193,11 +191,11 @@ export default function Results({
               </div>
 
               {q.solution && q.solution.trim() && (
-                <div className="ml-7 mt-3 rounded-xl border border-[#dde3dd] bg-[#f7f9f6] px-4 py-3">
-                  <p className="text-[11px] uppercase tracking-wide text-[#b4b8b4] mb-1">
+                <div className="ml-7 mt-3 rounded-xl border border-line bg-surface-muted px-4 py-3">
+                  <p className="text-[11px] uppercase tracking-wide text-ink-muted mb-1">
                     {t.workedSolution}
                   </p>
-                  <div className="text-[13px] text-[#2c2c2c] leading-relaxed">
+                  <div className="text-[13px] text-ink leading-relaxed">
                     <MathText text={q.solution} />
                   </div>
                 </div>

@@ -1,3 +1,5 @@
+import { useEffect, useState } from 'react';
+
 interface Props {
   name: string;
   src?: string | null;
@@ -12,6 +14,12 @@ const sizes = {
 };
 
 export default function UserAvatar({ name, src, size = 'md', className = '' }: Props) {
+  const [imageFailed, setImageFailed] = useState(false);
+
+  useEffect(() => {
+    setImageFailed(false);
+  }, [src]);
+
   const initials = name
     .split(/\s+/)
     .filter(Boolean)
@@ -19,12 +27,17 @@ export default function UserAvatar({ name, src, size = 'md', className = '' }: P
     .map((part) => part[0]?.toUpperCase() ?? '')
     .join('');
 
-  if (src) {
+  const showImage = Boolean(src) && !imageFailed;
+
+  if (showImage) {
     return (
       <img
-        src={src}
+        src={src!}
         alt=""
         referrerPolicy="no-referrer"
+        loading="lazy"
+        decoding="async"
+        onError={() => setImageFailed(true)}
         className={`shrink-0 rounded-full object-cover ${sizes[size]} ${className}`}
       />
     );

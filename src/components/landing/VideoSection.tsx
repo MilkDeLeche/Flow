@@ -66,9 +66,9 @@ export default function VideoSection() {
     <section
       id="demo"
       ref={root}
-      className="scroll-mt-24 border-t border-[#e8e8e8] px-5 py-12 lg:px-10 lg:py-20"
+      className="scroll-mt-24 border-t border-line px-5 py-12 lg:px-10 lg:py-20"
     >
-      <div className="relative mx-auto flex aspect-[16/10] max-w-[980px] items-center justify-center overflow-hidden rounded-3xl bg-[#eef1ed] md:aspect-video">
+      <div className="relative mx-auto flex aspect-[16/10] max-w-[980px] items-center justify-center overflow-hidden rounded-3xl bg-surface-muted md:aspect-video">
         <video
           autoPlay
           loop
@@ -94,16 +94,16 @@ export default function VideoSection() {
               '0 8px 32px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.6)',
           }}
         >
-          <p className="min-h-[48px] text-[16px] leading-relaxed text-[#2c2c2c]">
+          <p className="min-h-[48px] text-[16px] leading-relaxed text-ink">
             {typed}
             <span className="animate-pulse">|</span>
           </p>
           <div className="mt-3 flex items-center justify-between">
-            <Paperclip size={18} className="text-[#646464]" />
+            <Paperclip size={18} className="text-ink-secondary" />
             <button
               type="button"
               aria-label="Send"
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-black text-white transition-colors hover:bg-[#2c2c2c]"
+              className="btn-primary h-9 w-9 rounded-full p-0"
             >
               <ArrowUp size={16} />
             </button>

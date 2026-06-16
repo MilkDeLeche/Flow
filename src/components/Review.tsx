@@ -46,28 +46,28 @@ export default function Review({ userName, refreshKey, onDrill }: ReviewProps) {
   return (
     <section className="max-w-[760px] mx-auto px-5 md:px-8 pt-10 pb-16">
       <TextFade direction="up">
-        <h1 className="font-mondwest text-[#2c2c2c] text-[34px] md:text-[48px] mb-2">
+        <h1 className="font-mondwest text-ink text-[34px] md:text-[48px] mb-2">
           Review
         </h1>
-        <p className="text-[15px] text-[#646464] mb-8">
+        <p className="text-[15px] text-ink-secondary mb-8">
           Questions you’ve gotten wrong. Drill them until they stick — get one
           right and it leaves the pile.
         </p>
       </TextFade>
 
       {loading ? (
-        <div className="flex items-center gap-2 text-[#646464]">
+        <div className="flex items-center gap-2 text-ink-secondary">
           <Loader2 size={16} className="animate-spin" /> Loading…
         </div>
       ) : missed.length === 0 ? (
-        <p className="text-[15px] text-[#646464] bg-[#eef1ed] rounded-xl px-5 py-4">
+        <p className="text-[15px] text-ink-secondary bg-surface-muted rounded-xl px-5 py-4">
           Nothing to review yet — finish some quizzes and any misses show up here.
         </p>
       ) : (
         <>
           <button
             onClick={() => drill(missed, 30)}
-            className="inline-flex items-center gap-2 px-5 py-3 mb-8 text-[15px] bg-black text-white rounded-full hover:bg-[#2c2c2c] transition-colors"
+            className="btn-primary gap-2 px-5 py-3 mb-8 text-[15px]"
           >
             <Target size={16} />
             Drill everything ({Math.min(missed.length, 30)})
@@ -79,20 +79,20 @@ export default function Review({ userName, refreshKey, onDrill }: ReviewProps) {
               return (
                 <div
                   key={g.title}
-                  className="flex items-center justify-between border-2 border-[#dee2de] rounded-2xl px-5 py-4"
+                  className="flex items-center justify-between border-2 border-line rounded-2xl px-5 py-4"
                 >
                   <div className="min-w-0">
-                    <p className="text-[15px] text-[#2c2c2c] truncate">
+                    <p className="text-[15px] text-ink truncate">
                       {g.title}
                     </p>
-                    <p className="text-[13px] text-[#b4b8b4]">
+                    <p className="text-[13px] text-ink-muted">
                       {g.items.length} to review
                       {hardCount > 0 && ` · ${hardCount} you keep missing`}
                     </p>
                   </div>
                   <button
                     onClick={() => drill(g.items, 20)}
-                    className="shrink-0 ml-4 px-4 py-2 text-[14px] bg-white border-2 border-[#dde3dd] rounded-full hover:bg-[#eef1ed] transition-colors"
+                    className="btn-outline shrink-0 ml-4 px-4 py-2 text-[14px]"
                   >
                     Drill {Math.min(g.items.length, 20)}
                   </button>

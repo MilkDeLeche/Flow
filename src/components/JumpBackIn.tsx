@@ -63,7 +63,7 @@ export default function JumpBackIn({ onResume, refreshKey }: JumpBackInProps) {
   return (
     <section className="pt-2">
       <TextFade direction="up">
-        <h2 className="font-mondwest text-[#2c2c2c] text-[22px] md:text-[26px] mb-4">
+        <h2 className="font-mondwest text-ink text-[22px] md:text-[26px] mb-4">
           Jump back in
         </h2>
       </TextFade>
@@ -75,7 +75,7 @@ export default function JumpBackIn({ onResume, refreshKey }: JumpBackInProps) {
             <button
               key={m.id}
               onClick={() => onResume(m)}
-              className="group relative shrink-0 w-[200px] h-[150px] rounded-2xl overflow-hidden border-2 border-[#dee2de] text-left snap-start"
+              className="group relative shrink-0 w-[200px] h-[150px] rounded-2xl overflow-hidden border-2 border-line text-left snap-start"
             >
               <div className="absolute inset-0" style={{ background: gradient }} />
               <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors" />

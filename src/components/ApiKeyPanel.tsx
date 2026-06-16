@@ -86,14 +86,14 @@ export default function ApiKeyPanel({ onChange, byokAllowed = true }: ApiKeyPane
 
   return (
     <section>
-      <div className="border-2 border-[#dee2de] rounded-2xl p-5">
+      <div className="border-2 border-line rounded-2xl p-5">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h3 className="text-[15px] font-medium text-[#2c2c2c] flex items-center gap-2">
+            <h3 className="text-[15px] font-medium text-ink flex items-center gap-2">
               <Key size={16} />
               {active ? t.apiActive : t.freeTier}
             </h3>
-            <p className="text-[13px] text-[#646464] mt-1 leading-relaxed max-w-[540px]">
+            <p className="text-[13px] text-ink-secondary mt-1 leading-relaxed max-w-[540px]">
               {active ? (
                 stored ? (
                   <>
@@ -126,10 +126,10 @@ export default function ApiKeyPanel({ onChange, byokAllowed = true }: ApiKeyPane
 
         {active ? (
           <div className="flex flex-wrap items-center gap-3 mt-4">
-            <span className="text-[13px] text-[#2c2c2c]">
+            <span className="text-[13px] text-ink">
               {PROVIDER_LABEL[status.provider ?? 'anthropic']} · {status.model}
               {status.hint && (
-                <span className="text-[#b4b8b4]"> · {status.hint}</span>
+                <span className="text-ink-muted"> · {status.hint}</span>
               )}
             </span>
             <button
@@ -137,7 +137,7 @@ export default function ApiKeyPanel({ onChange, byokAllowed = true }: ApiKeyPane
                 setKey('');
                 setOpen(true);
               }}
-              className="text-[13px] text-[#646464] hover:text-[#2c2c2c] transition-colors"
+              className="text-[13px] text-ink-secondary hover:text-ink transition-colors"
             >
               {t.change}
             </button>
@@ -166,10 +166,8 @@ export default function ApiKeyPanel({ onChange, byokAllowed = true }: ApiKeyPane
                 <button
                   key={p}
                   onClick={() => pickProvider(p)}
-                  className={`px-3 py-1.5 text-[13px] rounded-full border-2 transition-colors ${
-                    provider === p
-                      ? 'bg-black text-white border-black'
-                      : 'bg-white border-[#dde3dd] hover:bg-[#eef1ed]'
+                  className={`px-3 py-1.5 text-[13px] transition-colors ${
+                    provider === p ? 'btn-pill-active' : 'btn-pill'
                   }`}
                 >
                   {PROVIDER_LABEL[p]}
@@ -178,13 +176,13 @@ export default function ApiKeyPanel({ onChange, byokAllowed = true }: ApiKeyPane
             </div>
 
             <div>
-              <label className="block text-[12px] text-[#646464] mb-1">
+              <label className="block text-[12px] text-ink-secondary mb-1">
                 {t.modelCheap}
               </label>
               <select
                 value={model}
                 onChange={(e) => setModel(e.target.value)}
-                className="w-full px-3 py-2.5 text-[14px] bg-white border-2 border-[#dde3dd] rounded-xl outline-none focus:border-[#b8beb8]"
+                className="input-field px-3 py-2.5 text-[14px]"
               >
                 {PROVIDER_MODELS[provider].map((m) => (
                   <option key={m.id} value={m.id}>
@@ -200,14 +198,14 @@ export default function ApiKeyPanel({ onChange, byokAllowed = true }: ApiKeyPane
               onChange={(e) => setKey(e.target.value)}
               placeholder={KEY_HINT[provider]}
               autoComplete="off"
-              className="w-full px-4 py-2.5 text-[14px] bg-white border-2 border-[#dde3dd] rounded-xl outline-none focus:border-[#b8beb8] transition-colors"
+              className="input-field px-4 py-2.5 text-[14px]"
             />
             {error && <p className="text-[13px] text-red-600">{error}</p>}
             <div className="flex items-center gap-2">
               <button
                 onClick={save}
                 disabled={busy}
-                className="inline-flex items-center gap-2 px-4 py-2 text-[14px] bg-black text-white rounded-full hover:bg-[#2c2c2c] transition-colors disabled:opacity-60"
+                className="btn-primary gap-2 px-4 py-2 text-[14px] disabled:opacity-60"
               >
                 {busy && <Loader2 size={14} className="animate-spin" />}
                 {t.saveKey}
@@ -217,7 +215,7 @@ export default function ApiKeyPanel({ onChange, byokAllowed = true }: ApiKeyPane
                   setOpen(false);
                   setError(null);
                 }}
-                className="px-4 py-2 text-[14px] text-[#646464] hover:text-[#2c2c2c] transition-colors"
+                className="px-4 py-2 text-[14px] text-ink-secondary hover:text-ink transition-colors"
               >
                 {t.cancel}
               </button>
@@ -226,7 +224,7 @@ export default function ApiKeyPanel({ onChange, byokAllowed = true }: ApiKeyPane
         ) : (
           <button
             onClick={() => setOpen(true)}
-            className="mt-4 px-4 py-2 text-[14px] bg-white border-2 border-[#dde3dd] rounded-full hover:bg-[#eef1ed] transition-colors"
+            className="btn-outline mt-4 px-4 py-2 text-[14px]"
           >
             {t.addKey}
           </button>

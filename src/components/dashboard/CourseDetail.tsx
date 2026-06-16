@@ -125,7 +125,7 @@ export default function CourseDetail({
     <div className="mx-auto max-w-[1120px] px-5 pb-16 pt-6 md:px-8">
       <button
         onClick={onBack}
-        className="mb-5 inline-flex items-center gap-1.5 text-[14px] text-[#646464] transition-colors hover:text-[#2c2c2c]"
+        className="mb-5 inline-flex items-center gap-1.5 text-[14px] text-ink-secondary transition-colors hover:text-ink"
       >
         <ArrowLeft size={15} /> {t.allCourses}
       </button>
@@ -171,7 +171,7 @@ export default function CourseDetail({
                 <>
                   <button
                     onClick={() => onStudy(latestChapter)}
-                    className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2.5 text-[13px] text-[#2c2c2c] transition-colors hover:bg-[#eef1ed]"
+                    className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2.5 text-[13px] text-ink transition-colors hover:bg-surface-muted"
                   >
                     <Play size={14} /> {t.startQuizPlain}
                   </button>
@@ -185,7 +185,7 @@ export default function CourseDetail({
               ) : (
                 <button
                   onClick={onAddChapter}
-                  className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2.5 text-[13px] text-[#2c2c2c] transition-colors hover:bg-[#eef1ed]"
+                  className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2.5 text-[13px] text-ink transition-colors hover:bg-surface-muted"
                 >
                   <Plus size={14} /> {t.addChapter}
                 </button>
@@ -196,23 +196,23 @@ export default function CourseDetail({
       </div>
 
       <div className="mb-6 grid gap-3 sm:grid-cols-3">
-        <div className="rounded-xl border border-[#dde3dd] bg-white px-4 py-3">
-          <p className="mb-1 flex items-center gap-2 text-[12px] text-[#646464]">
+        <div className="rounded-xl border border-line bg-surface-card px-4 py-3">
+          <p className="mb-1 flex items-center gap-2 text-[12px] text-ink-secondary">
             <FileText size={14} /> {t.chapterModules}
           </p>
-          <p className="text-[26px] font-semibold text-[#2c2c2c]">{chapters.length}</p>
+          <p className="text-[26px] font-semibold text-ink">{chapters.length}</p>
         </div>
-        <div className="rounded-xl border border-[#dde3dd] bg-white px-4 py-3">
-          <p className="mb-1 flex items-center gap-2 text-[12px] text-[#646464]">
+        <div className="rounded-xl border border-line bg-surface-card px-4 py-3">
+          <p className="mb-1 flex items-center gap-2 text-[12px] text-ink-secondary">
             <NotebookTabs size={14} /> {t.quizAttempts}
           </p>
-          <p className="text-[26px] font-semibold text-[#2c2c2c]">{attempts.length}</p>
+          <p className="text-[26px] font-semibold text-ink">{attempts.length}</p>
         </div>
-        <div className="rounded-xl border border-[#dde3dd] bg-white px-4 py-3">
-          <p className="mb-1 flex items-center gap-2 text-[12px] text-[#646464]">
+        <div className="rounded-xl border border-line bg-surface-card px-4 py-3">
+          <p className="mb-1 flex items-center gap-2 text-[12px] text-ink-secondary">
             <CheckCircle2 size={14} /> {t.bestScore}
           </p>
-          <p className="text-[26px] font-semibold text-[#2c2c2c]">
+          <p className="text-[26px] font-semibold text-ink">
             {attempts.length ? `${bestScore}%` : t.notStarted}
           </p>
         </div>
@@ -221,42 +221,42 @@ export default function CourseDetail({
       <div className="mb-6 flex flex-wrap gap-3">
         <button
           onClick={onAddChapter}
-          className="inline-flex items-center gap-2 rounded-full bg-black px-5 py-2.5 text-[14px] text-white transition-colors hover:bg-[#2c2c2c]"
+          className="btn-primary gap-2 px-5 py-2.5 text-[14px]"
         >
           <Plus size={16} /> {t.addChapter}
         </button>
         <button
           onClick={onReview}
-          className="inline-flex items-center gap-2 rounded-full border-2 border-[#dde3dd] bg-white px-5 py-2.5 text-[14px] transition-colors hover:bg-[#eef1ed]"
+          className="inline-flex items-center gap-2 rounded-full border-2 border-line bg-surface-card text-ink px-5 py-2.5 text-[14px] transition-colors hover:bg-surface-muted"
         >
           <Target size={16} /> {t.reviewMistakes}
         </button>
       </div>
 
-      <section className="mb-8 rounded-xl border border-[#dde3dd] bg-white p-4">
+      <section className="mb-8 rounded-xl border border-line bg-surface-card p-4">
         <div className="grid gap-3 md:grid-cols-[1fr_1fr_auto_auto] md:items-end">
           <div>
-            <label className="mb-1.5 block text-[12px] text-[#646464]">Semester</label>
+            <label className="mb-1.5 block text-[12px] text-ink-secondary">Semester</label>
             <input
               value={semester}
               onChange={(e) => setSemester(e.target.value)}
               placeholder="Fall, Spring, Summer..."
-              className="h-10 w-full rounded-lg border border-[#dde3dd] bg-[#fbfcf8] px-3 text-[14px] outline-none focus:border-[#b8beb8]"
+              className="input-field h-10 rounded-lg px-3 text-[14px]"
             />
           </div>
           <div>
-            <label className="mb-1.5 block text-[12px] text-[#646464]">Year</label>
+            <label className="mb-1.5 block text-[12px] text-ink-secondary">Year</label>
             <input
               value={year}
               onChange={(e) => setYear(e.target.value)}
               placeholder="2026"
-              className="h-10 w-full rounded-lg border border-[#dde3dd] bg-[#fbfcf8] px-3 text-[14px] outline-none focus:border-[#b8beb8]"
+              className="input-field h-10 rounded-lg px-3 text-[14px]"
             />
           </div>
           <button
             onClick={() => saveMeta()}
             disabled={savingMeta}
-            className="inline-flex h-10 items-center justify-center rounded-full border-2 border-[#dde3dd] px-4 text-[13px] transition-colors hover:bg-[#eef1ed] disabled:opacity-50"
+            className="btn-outline h-10 px-4 text-[13px] disabled:opacity-50"
           >
             Save details
           </button>
@@ -264,7 +264,7 @@ export default function CourseDetail({
             <button
               onClick={reopenCourse}
               disabled={savingMeta}
-              className="inline-flex h-10 items-center justify-center rounded-full border-2 border-[#dde3dd] px-4 text-[13px] transition-colors hover:bg-[#eef1ed] disabled:opacity-50"
+              className="btn-outline h-10 px-4 text-[13px] disabled:opacity-50"
             >
               Reopen
             </button>
@@ -272,13 +272,13 @@ export default function CourseDetail({
             <button
               onClick={markFinished}
               disabled={savingMeta}
-              className="inline-flex h-10 items-center justify-center rounded-full bg-black px-4 text-[13px] text-white transition-colors hover:bg-[#2c2c2c] disabled:opacity-50"
+              className="btn-primary h-10 px-4 text-[13px] disabled:opacity-50"
             >
               Finished
             </button>
           )}
         </div>
-        <p className="mt-2 text-[12px] text-[#8a8f8a]">
+        <p className="mt-2 text-[12px] text-ink-muted">
           {finishedAt
             ? `Finished ${fmtDate(finishedAt)}`
             : 'Mark the class finished when the semester is over.'}
@@ -300,7 +300,7 @@ export default function CourseDetail({
               <button
                 onClick={() => setConfirmDelete(false)}
                 disabled={deleting}
-                className="inline-flex h-10 items-center justify-center rounded-full border-2 border-red-200 bg-white px-4 text-[13px] text-red-950 transition-colors hover:bg-red-100 disabled:opacity-50"
+                className="inline-flex h-10 items-center justify-center rounded-full border-2 border-red-300 bg-surface-card px-4 text-[13px] text-red-700 transition-colors hover:bg-red-950/20 disabled:opacity-50 dark:border-red-800 dark:text-red-400"
               >
                 {t.cancel}
               </button>
@@ -316,7 +316,7 @@ export default function CourseDetail({
           ) : (
             <button
               onClick={() => setConfirmDelete(true)}
-              className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-full border-2 border-red-200 bg-white px-4 text-[13px] text-red-800 transition-colors hover:bg-red-100 hover:text-red-950"
+              className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-full border-2 border-red-300 bg-surface-card px-4 text-[13px] text-red-700 transition-colors hover:bg-red-950/20 dark:border-red-800 dark:text-red-400"
             >
               <Trash2 size={14} /> {t.deleteCourse}
             </button>
@@ -327,9 +327,9 @@ export default function CourseDetail({
         )}
       </section>
 
-      <h2 className="mb-3 text-[15px] font-medium text-[#2c2c2c]">{t.courseModules}</h2>
+      <h2 className="mb-3 text-[15px] font-medium text-ink">{t.courseModules}</h2>
       {chapters.length === 0 ? (
-        <p className="mb-8 rounded-xl border-2 border-dashed border-[#dde3dd] px-4 py-6 text-center text-[14px] text-[#b4b8b4]">
+        <p className="mb-8 rounded-xl border-2 border-dashed border-line px-4 py-6 text-center text-[14px] text-ink-muted">
           {t.noChapters}
         </p>
       ) : (
@@ -337,20 +337,20 @@ export default function CourseDetail({
           {chapters.map((m) => (
             <li
               key={m.id}
-              className="grid gap-3 rounded-xl border border-[#e1e5df] bg-white px-4 py-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-center"
+              className="grid gap-3 rounded-xl border border-line bg-surface-card px-4 py-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-center"
             >
               <div className="min-w-0 flex-1">
-                <p className="mb-1 inline-flex items-center gap-2 text-[12px] text-[#8a8f8a]">
+                <p className="mb-1 inline-flex items-center gap-2 text-[12px] text-ink-muted">
                   <FileText size={13} /> {t.chapterMaterial}
                 </p>
-                <p className="truncate text-[16px] font-semibold text-[#2c2c2c]">{m.title}</p>
-                <p className="text-[12px] text-[#646464]">
+                <p className="truncate text-[16px] font-semibold text-ink">{m.title}</p>
+                <p className="text-[12px] text-ink-secondary">
                   {t.addedDate(fmtDate(m.createdAt))}
                   {m.lastScore
                     ? ` - ${m.lastScore.score}/${m.lastScore.total}`
                     : ''}
                 </p>
-                <p className="mt-2 line-clamp-2 max-w-[680px] text-[13px] leading-relaxed text-[#646464]">
+                <p className="mt-2 line-clamp-2 max-w-[680px] text-[13px] leading-relaxed text-ink-secondary">
                   {m.content.replace(/\s+/g, ' ').slice(0, 220)}
                   {m.content.length > 220 ? '...' : ''}
                 </p>
@@ -358,13 +358,13 @@ export default function CourseDetail({
               <div className="flex shrink-0 flex-wrap items-center gap-2">
                 <button
                   onClick={() => onRead(m)}
-                  className="inline-flex items-center gap-1.5 rounded-full border-2 border-[#dde3dd] bg-white px-4 py-2 text-[13px] transition-colors hover:bg-[#eef1ed]"
+                  className="inline-flex items-center gap-1.5 rounded-full border-2 border-line bg-surface-card text-ink px-4 py-2 text-[13px] transition-colors hover:bg-surface-muted"
                 >
                   <BookOpen size={13} /> {t.read}
                 </button>
                 <button
                   onClick={() => onStudy(m)}
-                  className="inline-flex items-center gap-1.5 rounded-full bg-black px-4 py-2 text-[13px] text-white transition-colors hover:bg-[#2c2c2c]"
+                  className="btn-primary gap-1.5 px-4 py-2 text-[13px]"
                 >
                   <Play size={13} /> {t.quiz}
                 </button>
@@ -374,25 +374,25 @@ export default function CourseDetail({
         </ul>
       )}
 
-      <h2 className="mb-3 text-[15px] font-medium text-[#2c2c2c]">{t.quizzesTests}</h2>
+      <h2 className="mb-3 text-[15px] font-medium text-ink">{t.quizzesTests}</h2>
       {attempts.length === 0 ? (
-        <p className="text-[14px] text-[#b4b8b4]">{t.noAttempts}</p>
+        <p className="text-[14px] text-ink-muted">{t.noAttempts}</p>
       ) : (
         <ul className="space-y-2">
           {attempts.slice(0, 20).map((a) => (
             <li
               key={a.id}
-              className="flex items-center justify-between rounded-xl border border-[#e8e8e8] px-4 py-3"
+              className="flex items-center justify-between rounded-xl border border-line px-4 py-3"
             >
               <div className="min-w-0">
-                <p className="truncate text-[14px] text-[#2c2c2c]">
+                <p className="truncate text-[14px] text-ink">
                   {a.material_title}
                 </p>
-                <p className="text-[12px] text-[#646464]">
+                <p className="text-[12px] text-ink-secondary">
                   {a.mode === 'exam' ? t.test : t.quiz} - {fmtDate(a.created_at)}
                 </p>
               </div>
-              <span className="shrink-0 text-[14px] font-medium text-[#2c2c2c]">
+              <span className="shrink-0 text-[14px] font-medium text-ink">
                 {a.score}/{a.total}
               </span>
             </li>

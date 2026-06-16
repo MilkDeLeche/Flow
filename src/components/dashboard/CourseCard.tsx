@@ -11,7 +11,7 @@ export default function CourseCard({ course, onClick }: Props) {
   return (
     <button
       onClick={onClick}
-      className="group relative h-[200px] overflow-hidden rounded-2xl border-2 border-[#dee2de] text-left transition-colors hover:border-[#b8beb8]"
+      className="group relative h-[200px] overflow-hidden rounded-2xl border-2 border-line text-left transition-colors hover:border-line-strong"
     >
       <div
         className="absolute inset-0 transition-transform duration-700 group-hover:scale-105"

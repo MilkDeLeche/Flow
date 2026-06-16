@@ -81,7 +81,7 @@ export default function SelectableText({
     <div
       ref={rootRef}
       onMouseUp={handleMouseUp}
-      className="max-w-[72ch] whitespace-pre-wrap rounded-lg text-[16px] leading-8 text-ink-secondary"
+      className="w-full whitespace-pre-wrap text-[17px] leading-[1.85] tracking-[0.01em] text-ink-secondary"
     >
       {segments.map((segment) =>
         segment.highlightId ? (

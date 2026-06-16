@@ -1,3 +1,33 @@
+export const PLAN_PASTEL_COLORS = [
+  {
+    chip: 'bg-[#ede4ff] text-[#5c3d99] dark:bg-purple-950/55 dark:text-purple-200',
+    border: 'border-l-[#c4b5fd] dark:border-l-purple-400',
+    progress: 'bg-[#a78bfa]',
+  },
+  {
+    chip: 'bg-[#dbeafe] text-[#1e4a8a] dark:bg-blue-950/55 dark:text-blue-200',
+    border: 'border-l-[#93c5fd] dark:border-l-blue-400',
+    progress: 'bg-[#60a5fa]',
+  },
+  {
+    chip: 'bg-[#fef3c7] text-[#92400e] dark:bg-amber-950/55 dark:text-amber-200',
+    border: 'border-l-[#fcd34d] dark:border-l-amber-400',
+    progress: 'bg-[#fbbf24]',
+  },
+  {
+    chip: 'bg-[#dcfce7] text-[#166534] dark:bg-green-950/55 dark:text-green-200',
+    border: 'border-l-[#86efac] dark:border-l-green-400',
+    progress: 'bg-[#4ade80]',
+  },
+  {
+    chip: 'bg-[#fce7f3] text-[#9d174d] dark:bg-pink-950/55 dark:text-pink-200',
+    border: 'border-l-[#f9a8d4] dark:border-l-pink-400',
+    progress: 'bg-[#f472b6]',
+  },
+] as const;
+
+export type PlanPastelColor = (typeof PLAN_PASTEL_COLORS)[number];
+
 export interface StudyPlan {
   id: string;
   courseId: string;
@@ -7,6 +37,16 @@ export interface StudyPlan {
   quizzesPerWeek: number;
   completedSessions: string[];
   createdAt: string;
+  /** Pastel palette index (0–4). Assigned when the plan is created. */
+  colorIndex?: number;
+}
+
+export function planPastelColor(plan: Pick<StudyPlan, 'id' | 'colorIndex'>): PlanPastelColor {
+  const idx =
+    plan.colorIndex ??
+    Math.abs(plan.id.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0)) %
+      PLAN_PASTEL_COLORS.length;
+  return PLAN_PASTEL_COLORS[idx % PLAN_PASTEL_COLORS.length];
 }
 
 export interface StudySession {
@@ -82,6 +122,7 @@ export function createStudyPlan(input: {
     quizzesPerWeek: input.quizzesPerWeek,
     completedSessions: [],
     createdAt: new Date().toISOString(),
+    colorIndex: listStudyPlans().length % PLAN_PASTEL_COLORS.length,
   };
   const plans = listStudyPlans();
   plans.push(plan);

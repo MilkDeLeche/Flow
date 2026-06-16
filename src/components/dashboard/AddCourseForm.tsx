@@ -153,17 +153,17 @@ export default function AddCourseForm({ byokActive, onCreated }: Props) {
   };
 
   return (
-    <div className="rounded-2xl border-2 border-[#dee2de] p-5">
-      <h3 className="text-[15px] font-medium text-[#2c2c2c]">Add a course</h3>
-      <p className="mt-1 text-[13px] leading-relaxed text-[#646464]">
+    <div className="rounded-2xl border-2 border-line p-5">
+      <h3 className="text-[15px] font-medium text-ink">Add a course</h3>
+      <p className="mt-1 text-[13px] leading-relaxed text-ink-secondary">
         Paste a chapter, syllabus, or notes so AI can infer the class and summary,
         or type everything yourself.
       </p>
 
       <div className="mt-4">
         <div className="mb-2 flex items-center justify-between gap-3">
-          <label className="text-[12px] text-[#646464]">Paste course material</label>
-          <span className="text-[12px] text-[#b4b8b4]">
+          <label className="text-[12px] text-ink-secondary">Paste course material</label>
+          <span className="text-[12px] text-ink-muted">
             {pasteText.length.toLocaleString()} chars
           </span>
         </div>
@@ -172,12 +172,12 @@ export default function AddCourseForm({ byokActive, onCreated }: Props) {
           onChange={(e) => setPasteText(e.target.value)}
           rows={5}
           placeholder="Paste a chapter, syllabus, study guide, or notes. AI will infer the course name and about text. If you save with chapter text here, it becomes the first chapter."
-          className="w-full resize-y rounded-xl border-2 border-[#dde3dd] bg-white px-4 py-3 text-[14px] leading-relaxed outline-none transition-colors focus:border-[#b8beb8]"
+          className="w-full resize-y rounded-xl border-2 border-line bg-surface-card text-ink px-4 py-3 text-[14px] leading-relaxed outline-none transition-colors focus:border-line-strong"
         />
         <button
           onClick={autofillFromPaste}
           disabled={aiBusy || pasteText.trim().length < 80}
-          className="mt-2 inline-flex items-center gap-2 rounded-full border-2 border-[#dde3dd] bg-white px-4 py-2.5 text-[14px] transition-colors hover:bg-[#eef1ed] disabled:opacity-50"
+          className="mt-2 inline-flex items-center gap-2 rounded-full border-2 border-line bg-surface-card text-ink px-4 py-2.5 text-[14px] transition-colors hover:bg-surface-muted disabled:opacity-50"
         >
           {aiBusy ? <Loader2 size={15} className="animate-spin" /> : <Sparkles size={15} />}
           Fill from pasted text
@@ -188,12 +188,12 @@ export default function AddCourseForm({ byokActive, onCreated }: Props) {
         <button
           onClick={() => fileRef.current?.click()}
           disabled={aiBusy}
-          className="inline-flex items-center gap-2 rounded-full border-2 border-[#dde3dd] bg-white px-4 py-2.5 text-[14px] transition-colors hover:bg-[#eef1ed] disabled:opacity-60"
+          className="inline-flex items-center gap-2 rounded-full border-2 border-line bg-surface-card text-ink px-4 py-2.5 text-[14px] transition-colors hover:bg-surface-muted disabled:opacity-60"
         >
           {aiBusy ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
           {aiBusy ? 'Reading…' : 'Upload PDF / TXT / image'}
         </button>
-        <span className="inline-flex items-center gap-1.5 text-[12px] text-[#b4b8b4]">
+        <span className="inline-flex items-center gap-1.5 text-[12px] text-ink-muted">
           <Sparkles size={13} /> AI auto-fill {byokActive ? '' : '(needs your own key)'}
         </span>
         <input
@@ -210,14 +210,14 @@ export default function AddCourseForm({ byokActive, onCreated }: Props) {
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Course name — e.g. Biology 101"
-          className="w-full rounded-xl border-2 border-[#dde3dd] bg-white px-4 py-2.5 text-[15px] outline-none transition-colors focus:border-[#b8beb8]"
+          className="w-full rounded-xl border-2 border-line bg-surface-card text-ink px-4 py-2.5 text-[15px] outline-none transition-colors focus:border-line-strong"
         />
         <textarea
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           rows={2}
           placeholder="What it's about (optional)"
-          className="w-full resize-y rounded-xl border-2 border-[#dde3dd] bg-white px-4 py-2.5 text-[14px] outline-none transition-colors focus:border-[#b8beb8]"
+          className="w-full resize-y rounded-xl border-2 border-line bg-surface-card text-ink px-4 py-2.5 text-[14px] outline-none transition-colors focus:border-line-strong"
         />
 
         <div className="grid gap-3 sm:grid-cols-2">
@@ -225,18 +225,18 @@ export default function AddCourseForm({ byokActive, onCreated }: Props) {
             value={semester}
             onChange={(e) => setSemester(e.target.value)}
             placeholder="Semester (optional), e.g. Fall"
-            className="w-full rounded-xl border-2 border-[#dde3dd] bg-white px-4 py-2.5 text-[14px] outline-none transition-colors focus:border-[#b8beb8]"
+            className="w-full rounded-xl border-2 border-line bg-surface-card text-ink px-4 py-2.5 text-[14px] outline-none transition-colors focus:border-line-strong"
           />
           <input
             value={year}
             onChange={(e) => setYear(e.target.value)}
             placeholder="Year (optional), e.g. 2026"
-            className="w-full rounded-xl border-2 border-[#dde3dd] bg-white px-4 py-2.5 text-[14px] outline-none transition-colors focus:border-[#b8beb8]"
+            className="w-full rounded-xl border-2 border-line bg-surface-card text-ink px-4 py-2.5 text-[14px] outline-none transition-colors focus:border-line-strong"
           />
         </div>
 
         <div>
-          <label className="mb-1.5 block text-[12px] text-[#646464]">Card background</label>
+          <label className="mb-1.5 block text-[12px] text-ink-secondary">Card background</label>
           <div className="flex flex-wrap gap-2">
             {THEMES.map((t) => (
               <button
@@ -244,7 +244,7 @@ export default function AddCourseForm({ byokActive, onCreated }: Props) {
                 onClick={() => setTheme(t.key)}
                 title={t.label}
                 className={`h-9 w-9 rounded-full border-2 transition-transform ${
-                  theme === t.key ? 'border-[#2c2c2c] scale-110' : 'border-white'
+                  theme === t.key ? 'border-accent scale-110' : 'border-line'
                 }`}
                 style={{ backgroundImage: themeGradient(t.key) }}
               />
@@ -253,12 +253,12 @@ export default function AddCourseForm({ byokActive, onCreated }: Props) {
         </div>
 
         <div>
-          <label className="mb-1.5 block text-[12px] text-[#646464]">Course image</label>
+          <label className="mb-1.5 block text-[12px] text-ink-secondary">Course image</label>
           <div className="flex flex-wrap items-center gap-3">
             <button
               type="button"
               onClick={() => imageRef.current?.click()}
-              className="inline-flex items-center gap-2 rounded-full border-2 border-[#dde3dd] bg-white px-4 py-2 text-[13px] transition-colors hover:bg-[#eef1ed]"
+              className="inline-flex items-center gap-2 rounded-full border-2 border-line bg-surface-card text-ink px-4 py-2 text-[13px] transition-colors hover:bg-surface-muted"
             >
               <ImageIcon size={14} /> {imageUrl ? 'Change image' : 'Upload image'}
             </button>
@@ -266,7 +266,7 @@ export default function AddCourseForm({ byokActive, onCreated }: Props) {
               <button
                 type="button"
                 onClick={() => setImageUrl(undefined)}
-                className="inline-flex items-center gap-1.5 rounded-full border-2 border-[#dde3dd] px-3 py-2 text-[13px] text-[#646464] transition-colors hover:bg-[#eef1ed] hover:text-[#2c2c2c]"
+                className="inline-flex items-center gap-1.5 rounded-full border-2 border-line px-3 py-2 text-[13px] text-ink-secondary transition-colors hover:bg-surface-muted hover:text-ink"
               >
                 <X size={13} /> Remove
               </button>
@@ -280,7 +280,7 @@ export default function AddCourseForm({ byokActive, onCreated }: Props) {
             />
           </div>
           {imageUrl && (
-            <div className="mt-3 h-28 overflow-hidden rounded-xl border-2 border-[#dde3dd]">
+            <div className="mt-3 h-28 overflow-hidden rounded-xl border-2 border-line">
               <img
                 src={imageUrl}
                 alt=""
@@ -296,7 +296,7 @@ export default function AddCourseForm({ byokActive, onCreated }: Props) {
         <button
           onClick={save}
           disabled={busy}
-          className="inline-flex items-center gap-2 rounded-full bg-black px-5 py-2.5 text-[14px] text-white transition-colors hover:bg-[#2c2c2c] disabled:opacity-60"
+          className="btn-primary gap-2 px-5 py-2.5 text-[14px] disabled:opacity-60"
         >
           {busy && <Loader2 size={14} className="animate-spin" />}
           {pasteText.trim().length >= 40

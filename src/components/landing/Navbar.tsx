@@ -14,7 +14,7 @@ export default function Navbar({ onEnter }: Props) {
   return (
     <header className="fixed left-0 right-0 top-0 z-40 border-b border-line bg-surface/90 backdrop-blur-sm lg:left-[240px]">
       <div className="flex h-16 items-center justify-between px-5 lg:px-10">
-        <a href="#home" className="font-mondwest text-[28px] leading-none lg:text-[32px]">
+        <a href="#home" className="font-mondwest text-[28px] leading-none text-ink lg:text-[32px]">
           Flow
         </a>
         <div className="flex items-center gap-2 lg:gap-4">
@@ -36,16 +36,10 @@ export default function Navbar({ onEnter }: Props) {
           >
             {t.demo}
           </a>
-          <button
-            onClick={onEnter}
-            className="rounded-full border-2 border-[#dde3dd] bg-white px-4 py-2 text-[14px] transition-colors hover:bg-[#eef1ed]"
-          >
+          <button onClick={onEnter} className="btn-outline px-4 py-2 text-[14px]">
             {t.logIn}
           </button>
-          <button
-            onClick={onEnter}
-            className="rounded-full bg-black px-4 py-2 text-[14px] text-white transition-colors hover:bg-[#2c2c2c]"
-          >
+          <button onClick={onEnter} className="btn-primary px-4 py-2 text-[14px]">
             {t.startStudying}
           </button>
         </div>
