@@ -9,6 +9,19 @@ import TurnstileWidget, { turnstileEnabled } from './TurnstileWidget';
 const LOGIN_VIDEO =
   'https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260606_135315_5f9e8a4c-09bc-4a97-9f75-8a387d4258ee.mp4';
 
+const sceneClass =
+  'relative min-h-[100dvh] w-full overflow-x-hidden font-[Inter,ui-sans-serif,system-ui,sans-serif] antialiased';
+const shellClass = (withBack = false) =>
+  `relative z-10 flex min-h-[100dvh] w-full items-center justify-center overflow-y-auto px-4 py-6 sm:px-6 sm:py-10 pb-[max(1.5rem,env(safe-area-inset-bottom,0px))] ${
+    withBack
+      ? 'pt-[max(4.75rem,env(safe-area-inset-top,0px)+3.5rem)]'
+      : 'pt-[max(1.5rem,env(safe-area-inset-top,0px))]'
+  }`;
+const cardClass =
+  'relative w-full max-w-lg overflow-hidden rounded-2xl p-5 shadow-2xl sm:p-8 md:p-12';
+const inputClass =
+  'w-full rounded-xl border border-white/15 bg-white/5 px-4 py-3.5 text-base text-white outline-none transition-colors placeholder:text-white/30 focus:border-white/30 focus:bg-white/10 sm:text-sm';
+
 interface LoginProps {
   onBack?: () => void;
 }
@@ -17,12 +30,56 @@ type Mode = 'signIn' | 'signUp';
 
 function FlowLogo() {
   return (
-    <svg width="48" height="48" viewBox="0 0 256 256" aria-hidden className="mx-auto">
+    <svg
+      width="48"
+      height="48"
+      viewBox="0 0 256 256"
+      aria-hidden
+      className="mx-auto h-10 w-10 sm:h-12 sm:w-12"
+    >
       <path
         fill="white"
         d="M 128 192 L 128 256 L 64.5 256 L 32 223 L 0 192 L 0 128 L 64 128 Z M 256 192 L 256 256 L 192.5 256 L 160 223 L 128 192 L 128 128 L 192 128 Z M 128 64 L 128 128 L 64.5 128 L 32 95 L 0 64 L 0 0 L 64 0 Z M 256 64 L 256 128 L 192.5 128 L 160 95 L 128 64 L 128 0 L 192 0 Z"
       />
     </svg>
+  );
+}
+
+function LoginBackgroundVideo({
+  videoRef,
+}: {
+  videoRef: React.RefObject<HTMLVideoElement>;
+}) {
+  return (
+    <video
+      ref={videoRef}
+      autoPlay
+      loop
+      muted
+      playsInline
+      crossOrigin="anonymous"
+      className="pointer-events-none absolute inset-0 h-full w-full object-cover"
+      src={LOGIN_VIDEO}
+    />
+  );
+}
+
+function LoginGlassCard({
+  sceneRef,
+  videoRef,
+  cardRef,
+  children,
+}: {
+  sceneRef: React.RefObject<HTMLDivElement>;
+  videoRef: React.RefObject<HTMLVideoElement>;
+  cardRef: React.RefObject<HTMLDivElement>;
+  children: React.ReactNode;
+}) {
+  return (
+    <div ref={cardRef} className={cardClass}>
+      <LiquidGlassCanvas videoRef={videoRef} sceneRef={sceneRef} cardRef={cardRef} />
+      <div className="relative z-[1]">{children}</div>
+    </div>
   );
 }
 
@@ -162,41 +219,28 @@ export default function Login({ onBack }: LoginProps) {
 
   if (awaitingConfirm) {
     return (
-      <div
-        ref={sceneRef}
-        className="relative min-h-screen w-full overflow-hidden font-[Inter,ui-sans-serif,system-ui,sans-serif] antialiased"
-      >
-        <video
-          ref={videoRef}
-          autoPlay
-          loop
-          muted
-          playsInline
-          crossOrigin="anonymous"
-          className="absolute inset-0 h-full w-full object-cover"
-          src={LOGIN_VIDEO}
-        />
-        <div className="relative z-10 flex min-h-screen items-center justify-center px-4 py-8">
-          <div
-            ref={cardRef}
-            className="relative w-full max-w-lg overflow-hidden rounded-2xl p-6 shadow-2xl sm:p-10"
-          >
-            <LiquidGlassCanvas videoRef={videoRef} sceneRef={sceneRef} cardRef={cardRef} />
-            <div className="relative z-[1] text-center text-white">
+      <div ref={sceneRef} className={sceneClass}>
+        <LoginBackgroundVideo videoRef={videoRef} />
+        <div className={shellClass()}>
+          <LoginGlassCard sceneRef={sceneRef} videoRef={videoRef} cardRef={cardRef}>
+            <div className="text-center text-white">
               <Mail size={32} className="mx-auto mb-4 text-white/70" />
-              <h1 className="mb-2 text-2xl font-semibold tracking-tight">{t.checkEmailTitle}</h1>
-              <p className="mb-6 text-sm leading-relaxed text-white/60">
-                {t.checkEmailBody(email.trim())}
-              </p>
+              <h1 className="mb-2 text-xl font-semibold tracking-tight sm:text-2xl">
+                {t.checkEmailTitle}
+              </h1>
+              <p className="mb-6 text-sm leading-relaxed text-white/60">{t.checkEmailBody(email.trim())}</p>
               <button
                 type="button"
                 onClick={resendConfirmation}
                 disabled={busy || !captchaOk}
-                className="mb-3 w-full rounded-full bg-white py-3.5 text-sm font-semibold text-gray-900 hover:bg-white/90 disabled:opacity-50"
+                className="mb-3 w-full rounded-full bg-white py-3.5 text-base font-semibold text-gray-900 hover:bg-white/90 disabled:opacity-50 sm:text-sm"
               >
                 {busy ? <Loader2 size={16} className="mx-auto animate-spin" /> : t.resendConfirmation}
               </button>
-              <TurnstileWidget onToken={setCaptchaToken} className="mb-3 flex justify-center" />
+              <TurnstileWidget
+                onToken={setCaptchaToken}
+                className="mb-3 flex max-w-full justify-center overflow-x-auto"
+              />
               <button
                 type="button"
                 onClick={() => {
@@ -208,215 +252,198 @@ export default function Login({ onBack }: LoginProps) {
                 {t.backToSignIn}
               </button>
             </div>
-          </div>
+          </LoginGlassCard>
         </div>
       </div>
     );
   }
 
   return (
-    <div
-      ref={sceneRef}
-      className="relative min-h-screen w-full overflow-hidden font-[Inter,ui-sans-serif,system-ui,sans-serif] antialiased"
-    >
-      <video
-        ref={videoRef}
-        autoPlay
-        loop
-        muted
-        playsInline
-        crossOrigin="anonymous"
-        className="absolute inset-0 h-full w-full object-cover"
-        src={LOGIN_VIDEO}
-      />
+    <div ref={sceneRef} className={sceneClass}>
+      <LoginBackgroundVideo videoRef={videoRef} />
 
       {onBack && (
         <button
           type="button"
           onClick={onBack}
-          className="absolute left-4 top-4 z-20 inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-black/30 px-4 py-2 text-sm text-white/80 backdrop-blur-sm transition-colors hover:text-white sm:left-6 sm:top-6"
+          className="absolute left-4 z-20 inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-black/30 px-3 py-2 text-sm text-white/80 backdrop-blur-sm transition-colors hover:text-white sm:left-6 sm:px-4 top-[max(0.75rem,env(safe-area-inset-top,0px)+0.5rem)]"
         >
           <ArrowLeft size={15} /> {t.back}
         </button>
       )}
 
-      <div className="relative z-10 flex min-h-screen items-center justify-center px-4 py-8">
-        <div
-          ref={cardRef}
-          className="relative w-full max-w-lg overflow-hidden rounded-2xl p-6 shadow-2xl sm:p-10 md:p-14"
-        >
-          <LiquidGlassCanvas videoRef={videoRef} sceneRef={sceneRef} cardRef={cardRef} />
+      <div className={shellClass(Boolean(onBack))}>
+        <LoginGlassCard sceneRef={sceneRef} videoRef={videoRef} cardRef={cardRef}>
+          <form onSubmit={submit} className="space-y-4 sm:space-y-5">
+            <FadeUp delay={0}>
+              <FlowLogo />
+            </FadeUp>
 
-          <div className="relative z-[1]">
-            <form onSubmit={submit} className="space-y-5">
-              <FadeUp delay={0}>
-                <FlowLogo />
-              </FadeUp>
+            <FadeUp delay={100}>
+              <h1 className="mb-2 bg-gradient-to-r from-white to-purple-300 bg-clip-text text-center text-2xl font-medium tracking-tight text-transparent sm:text-3xl md:text-4xl lg:text-5xl">
+                {mode === 'signUp' ? t.createAccount : t.loginWelcome}
+              </h1>
+            </FadeUp>
 
-              <FadeUp delay={100}>
-                <h1 className="mb-2 bg-gradient-to-r from-white to-purple-300 bg-clip-text text-center text-3xl font-medium tracking-tight text-transparent sm:text-4xl md:text-5xl">
-                  {mode === 'signUp' ? t.createAccount : t.loginWelcome}
-                </h1>
-              </FadeUp>
+            <FadeUp delay={200}>
+              <p className="mb-5 text-center text-xs leading-relaxed text-white/60 sm:mb-8 sm:text-sm md:text-base">
+                {mode === 'signUp' ? (
+                  t.signUpKeep
+                ) : (
+                  <>
+                    {t.loginSubtitle}{' '}
+                    <span className="block sm:inline">{t.loginSubtitleBreak}</span>
+                  </>
+                )}
+              </p>
+            </FadeUp>
 
-              <FadeUp delay={200}>
-                <p className="mb-6 text-center text-xs leading-relaxed text-white/60 sm:mb-8 sm:text-sm md:text-base">
-                  {mode === 'signUp' ? (
-                    t.signUpKeep
-                  ) : (
-                    <>
-                      {t.loginSubtitle}
-                      <br className="hidden sm:inline" />
-                      {t.loginSubtitleBreak}
-                    </>
-                  )}
-                </p>
-              </FadeUp>
+            <FadeUp delay={300}>
+              <label className="mb-1.5 block text-sm font-medium text-white/70">{t.email}</label>
+              <input
+                type="email"
+                autoComplete="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                placeholder={t.emailPlaceholder}
+                className={inputClass}
+              />
+            </FadeUp>
 
-              <FadeUp delay={300}>
-                <label className="mb-1.5 block text-sm font-medium text-white/70">{t.email}</label>
+            <FadeUp delay={400}>
+              <label className="mb-1.5 block text-sm font-medium text-white/70">{t.password}</label>
+              <div className="relative">
                 <input
-                  type="email"
-                  autoComplete="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  type={showPassword ? 'text' : 'password'}
+                  autoComplete={mode === 'signUp' ? 'new-password' : 'current-password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   required
-                  placeholder={t.emailPlaceholder}
-                  className="w-full rounded-xl border border-white/15 bg-white/5 px-4 py-3.5 text-sm text-white outline-none transition-colors placeholder:text-white/30 focus:border-white/30 focus:bg-white/10"
+                  minLength={8}
+                  placeholder={t.passwordPlaceholder}
+                  className={`${inputClass} pr-12`}
                 />
-              </FadeUp>
-
-              <FadeUp delay={400}>
-                <label className="mb-1.5 block text-sm font-medium text-white/70">{t.password}</label>
-                <div className="relative">
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    autoComplete={mode === 'signUp' ? 'new-password' : 'current-password'}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    minLength={8}
-                    placeholder={t.passwordPlaceholder}
-                    className="w-full rounded-xl border border-white/15 bg-white/5 px-4 py-3.5 pr-12 text-sm text-white outline-none transition-colors placeholder:text-white/30 focus:border-white/30 focus:bg-white/10"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword((v) => !v)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/70"
-                    aria-label={showPassword ? 'Hide password' : 'Show password'}
-                  >
-                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                  </button>
-                </div>
-                {mode === 'signUp' && (
-                  <p className="mt-1.5 text-xs text-white/40">{t.passwordHint}</p>
-                )}
-              </FadeUp>
-
-              {mode === 'signIn' && (
-                <FadeUp delay={500}>
-                  <div className="flex items-center justify-between">
-                    <label className="group flex cursor-pointer items-center gap-2.5">
-                      <input
-                        type="checkbox"
-                        checked={staySignedIn}
-                        onChange={(e) => setStaySignedIn(e.target.checked)}
-                        className="sr-only"
-                      />
-                      <span className="relative h-5 w-5 rounded border border-white/20 bg-white/5 group-has-[:checked]:border-purple-400 group-has-[:checked]:bg-purple-500">
-                        <svg
-                          className="absolute left-0.5 top-0.5 hidden h-4 w-4 text-white group-has-[:checked]:block"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth={3}
-                          aria-hidden
-                        >
-                          <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                      </span>
-                      <span className="text-sm text-white/70">{t.staySignedIn}</span>
-                    </label>
-                    <button
-                      type="button"
-                      onClick={resetPassword}
-                      disabled={busy}
-                      className="text-sm text-white/70 hover:text-white disabled:opacity-50"
-                    >
-                      {t.resetPassword}
-                    </button>
-                  </div>
-                </FadeUp>
-              )}
-
-              <FadeUp delay={600}>
-                <TurnstileWidget onToken={setCaptchaToken} className="flex justify-center" />
-                {error && (
-                  <p className="mt-3 rounded-xl border border-red-400/30 bg-red-950/40 px-3 py-2 text-sm text-red-200">
-                    {error}
-                  </p>
-                )}
-                {notice && (
-                  <p className="mt-3 rounded-xl border border-emerald-400/30 bg-emerald-950/40 px-3 py-2 text-sm text-emerald-200">
-                    {notice}
-                  </p>
-                )}
-                <button
-                  type="submit"
-                  disabled={busy || !captchaOk || !supabase}
-                  className="mt-3 flex w-full items-center justify-center gap-2 rounded-full bg-white py-3.5 text-base font-semibold text-gray-900 hover:bg-white/90 active:scale-[0.98] disabled:opacity-60"
-                >
-                  {busy ? <Loader2 size={18} className="animate-spin" /> : null}
-                  {mode === 'signUp' ? t.createAccount : t.signIn}
-                </button>
-              </FadeUp>
-
-              <FadeUp delay={700}>
-                <div className="my-6 flex items-center gap-4">
-                  <span className="h-px flex-1 bg-white/15" />
-                  <span className="text-sm text-white/40">{t.orDivider}</span>
-                  <span className="h-px flex-1 bg-white/15" />
-                </div>
-              </FadeUp>
-
-              <FadeUp delay={800}>
                 <button
                   type="button"
-                  onClick={signInWithGoogle}
-                  disabled={busy || !supabase}
-                  className="flex w-full items-center justify-center gap-3 rounded-full border border-white/15 bg-white/5 py-3.5 text-sm font-medium text-white hover:bg-white/10 active:scale-[0.98] disabled:opacity-60"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/70"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
                 >
-                  <GoogleMark />
-                  {t.continueWithGoogle}
+                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
-              </FadeUp>
+              </div>
+              {mode === 'signUp' && (
+                <p className="mt-1.5 text-xs text-white/40">{t.passwordHint}</p>
+              )}
+            </FadeUp>
 
-              <FadeUp delay={900}>
-                <p className="mt-6 text-center text-sm text-white/50">
-                  {mode === 'signIn' ? t.newToFlow : `${t.signInInstead}?`}{' '}
+            {mode === 'signIn' && (
+              <FadeUp delay={500}>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <label className="group flex cursor-pointer items-center gap-2.5">
+                    <input
+                      type="checkbox"
+                      checked={staySignedIn}
+                      onChange={(e) => setStaySignedIn(e.target.checked)}
+                      className="sr-only"
+                    />
+                    <span className="relative h-5 w-5 shrink-0 rounded border border-white/20 bg-white/5 group-has-[:checked]:border-purple-400 group-has-[:checked]:bg-purple-500">
+                      <svg
+                        className="absolute left-0.5 top-0.5 hidden h-4 w-4 text-white group-has-[:checked]:block"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth={3}
+                        aria-hidden
+                      >
+                        <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </span>
+                    <span className="text-sm text-white/70">{t.staySignedIn}</span>
+                  </label>
                   <button
                     type="button"
-                    onClick={toggleMode}
-                    className="font-medium text-white hover:text-purple-300"
+                    onClick={resetPassword}
+                    disabled={busy}
+                    className="self-start text-left text-sm text-white/70 hover:text-white disabled:opacity-50 sm:self-auto"
                   >
-                    {mode === 'signIn' ? t.joinNow : t.signIn}
+                    {t.resetPassword}
                   </button>
-                </p>
-                <p className="mt-4 text-center text-xs leading-relaxed text-white/40">
-                  {t.signInLegalNote}{' '}
-                  <a href="/#privacy" className="underline hover:text-white/70">
-                    {t.privacyPolicy}
-                  </a>{' '}
-                  {t.and}{' '}
-                  <a href="/#terms" className="underline hover:text-white/70">
-                    {t.termsOfUse}
-                  </a>
-                  .
-                </p>
+                </div>
               </FadeUp>
-            </form>
-          </div>
-        </div>
+            )}
+
+            <FadeUp delay={600}>
+              <TurnstileWidget
+                onToken={setCaptchaToken}
+                className="flex max-w-full justify-center overflow-x-auto"
+              />
+              {error && (
+                <p className="mt-3 rounded-xl border border-red-400/30 bg-red-950/40 px-3 py-2 text-sm text-red-200">
+                  {error}
+                </p>
+              )}
+              {notice && (
+                <p className="mt-3 rounded-xl border border-emerald-400/30 bg-emerald-950/40 px-3 py-2 text-sm text-emerald-200">
+                  {notice}
+                </p>
+              )}
+              <button
+                type="submit"
+                disabled={busy || !captchaOk || !supabase}
+                className="mt-3 flex w-full items-center justify-center gap-2 rounded-full bg-white py-3.5 text-base font-semibold text-gray-900 hover:bg-white/90 active:scale-[0.98] disabled:opacity-60"
+              >
+                {busy ? <Loader2 size={18} className="animate-spin" /> : null}
+                {mode === 'signUp' ? t.createAccount : t.signIn}
+              </button>
+            </FadeUp>
+
+            <FadeUp delay={700}>
+              <div className="my-5 flex items-center gap-3 sm:my-6 sm:gap-4">
+                <span className="h-px flex-1 bg-white/15" />
+                <span className="shrink-0 text-xs text-white/40 sm:text-sm">{t.orDivider}</span>
+                <span className="h-px flex-1 bg-white/15" />
+              </div>
+            </FadeUp>
+
+            <FadeUp delay={800}>
+              <button
+                type="button"
+                onClick={signInWithGoogle}
+                disabled={busy || !supabase}
+                className="flex w-full items-center justify-center gap-3 rounded-full border border-white/15 bg-white/5 px-4 py-3.5 text-sm font-medium text-white hover:bg-white/10 active:scale-[0.98] disabled:opacity-60"
+              >
+                <GoogleMark />
+                <span className="truncate">{t.continueWithGoogle}</span>
+              </button>
+            </FadeUp>
+
+            <FadeUp delay={900}>
+              <p className="mt-5 text-center text-sm text-white/50 sm:mt-6">
+                {mode === 'signIn' ? t.newToFlow : `${t.signInInstead}?`}{' '}
+                <button
+                  type="button"
+                  onClick={toggleMode}
+                  className="font-medium text-white hover:text-purple-300"
+                >
+                  {mode === 'signIn' ? t.joinNow : t.signIn}
+                </button>
+              </p>
+              <p className="mt-4 text-center text-xs leading-relaxed text-white/40">
+                {t.signInLegalNote}{' '}
+                <a href="/#privacy" className="underline hover:text-white/70">
+                  {t.privacyPolicy}
+                </a>{' '}
+                {t.and}{' '}
+                <a href="/#terms" className="underline hover:text-white/70">
+                  {t.termsOfUse}
+                </a>
+                .
+              </p>
+            </FadeUp>
+          </form>
+        </LoginGlassCard>
       </div>
     </div>
   );

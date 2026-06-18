@@ -136,6 +136,32 @@ body {
   pointer-events: none;
 }
 
+.neumorph-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.04);
+  transition: all 0.2s ease;
+  box-shadow:
+    -5px -5px 10px rgba(255, 255, 255, 0.08),
+    5px 5px 10px rgba(0, 0, 0, 0.45);
+}
+
+.neumorph-btn:hover {
+  color: rgb(167 139 250);
+  box-shadow:
+    -1px -1px 5px rgba(255, 255, 255, 0.06),
+    1px 1px 5px rgba(0, 0, 0, 0.35),
+    inset -2px -2px 5px rgba(255, 255, 255, 0.12),
+    inset 2px 2px 4px rgba(0, 0, 0, 0.45);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .neumorph-btn {
+    transition: none;
+  }
+}
+
 @keyframes marquee-left {
   from {
     transform: translateX(0);

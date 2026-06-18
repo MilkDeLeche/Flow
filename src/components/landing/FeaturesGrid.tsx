@@ -6,6 +6,7 @@ import {
   Image as ImageIcon,
   Languages,
   Lightbulb,
+  Send,
   Sparkle,
   Sparkles,
   Target,
@@ -138,8 +139,9 @@ export default function FeaturesGrid({ onEnter }: Props) {
         <button
           type="button"
           onClick={onEnter}
-          className="liquid-glass shrink-0 self-start rounded-full px-5 py-2.5 text-sm text-white transition-opacity hover:opacity-90 sm:px-6 sm:py-3 sm:text-[15px]"
+          className="neumorph-btn shrink-0 self-start rounded-full px-5 py-2.5 text-sm text-white/70 sm:px-6 sm:py-3 sm:text-[15px]"
         >
+          <Send className="h-4 w-4" strokeWidth={2} aria-hidden />
           {t.startStudying}
         </button>
       </div>

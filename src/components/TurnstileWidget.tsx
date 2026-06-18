@@ -94,7 +94,7 @@ export default function TurnstileWidget({ onToken, className = '' }: Props) {
 
   return (
     <div className={className}>
-      <div ref={hostRef} className={ready ? '' : 'min-h-[65px]'} />
+      <div ref={hostRef} className={`max-w-full ${ready ? '' : 'min-h-[65px]'}`} />
     </div>
   );
 }
