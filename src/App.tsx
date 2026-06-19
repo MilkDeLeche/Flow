@@ -28,6 +28,7 @@ import {
   effectiveTier,
 } from './lib/tiers';
 import { parseCourseFromInput } from './lib/parseCourse';
+import { SAMPLE_CONTENT, SAMPLE_QUESTIONS, SAMPLE_TITLE } from './lib/sampleCourse';
 import type { Course } from './lib/courses';
 import {
   addToBank,
@@ -361,6 +362,22 @@ export default function App() {
     }
   };
 
+  // First-run "wow": seed a bundled sample chapter + ready-made questions and
+  // jump straight into a quiz — no upload, no API call, no waiting.
+  const startSample = async () => {
+    setError(null);
+    setRoundCourse(null);
+    const id = await recordMaterial(SAMPLE_TITLE, SAMPLE_CONTENT, 'sample');
+    await addToBank(id, SAMPLE_TITLE, SAMPLE_QUESTIONS);
+    setTitle(SAMPLE_TITLE);
+    setMaterial(SAMPLE_CONTENT);
+    setMaterialId(id);
+    setMode('practice');
+    setPdfBase64(undefined);
+    setRefreshKey((k) => k + 1);
+    await runRound(10, SAMPLE_CONTENT, id, SAMPLE_TITLE, undefined, 'mixed', 'practice');
+  };
+
   // Flag a bad question: drop it from the bank/review pile so it won't return.
   const handleReportQuestion = (q: QuizQuestion) => {
     if (!materialId) return;
@@ -467,6 +484,7 @@ export default function App() {
               setUploadCourseId(null);
               setView('upload');
             }}
+            onTrySample={startSample}
             onResume={(m) => handleResume(m, null)}
           />
         )}

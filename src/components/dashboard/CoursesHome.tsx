@@ -25,6 +25,7 @@ interface Props {
   ) => void;
   onChanged: () => void;
   onQuickQuiz: () => void;
+  onTrySample: () => void;
   onResume: (m: RecentMaterial) => void;
 }
 
@@ -36,6 +37,7 @@ export default function CoursesHome({
   onCourseCreated,
   onChanged,
   onQuickQuiz,
+  onTrySample,
   onResume,
 }: Props) {
   const { t } = useLocale();
@@ -174,12 +176,23 @@ export default function CoursesHome({
               {courses.length ? t.noCourseMatches : t.noCourses}
             </p>
             {!courses.length && (
-              <button
-                onClick={() => setAdding(true)}
-                className="mt-4 btn-primary h-10 gap-2 px-4 text-[13px]"
-              >
-                <Plus size={15} /> {t.newCourse}
-              </button>
+              <div className="mt-4 flex flex-col items-center gap-3">
+                <p className="text-[13px] text-ink-secondary">{t.sampleCtaBody}</p>
+                <div className="flex flex-wrap items-center justify-center gap-2">
+                  <button
+                    onClick={onTrySample}
+                    className="btn-primary h-10 gap-2 px-4 text-[13px]"
+                  >
+                    <Sparkles size={15} /> {t.sampleCtaButton}
+                  </button>
+                  <button
+                    onClick={() => setAdding(true)}
+                    className="btn-outline h-10 gap-2 px-4 text-[13px]"
+                  >
+                    <Plus size={15} /> {t.newCourse}
+                  </button>
+                </div>
+              </div>
             )}
           </div>
         ) : (
