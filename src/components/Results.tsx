@@ -1,4 +1,5 @@
-import { Check, X, RotateCcw, ArrowUpRight, FilePlus2 } from 'lucide-react';
+import { useState } from 'react';
+import { Check, X, RotateCcw, ArrowUpRight, FilePlus2, Flag } from 'lucide-react';
 import TextFade from './TextFade';
 import MathText from './MathText';
 import { useLocale } from '../lib/i18n';
@@ -14,6 +15,7 @@ interface ResultsProps {
   onRound: (size: RoundSize) => void;
   onRetake: () => void;
   onNewMaterial: () => void;
+  onReport?: (q: QuizQuestion) => void;
 }
 
 export default function Results({
@@ -25,8 +27,10 @@ export default function Results({
   onRound,
   onRetake,
   onNewMaterial,
+  onReport,
 }: ResultsProps) {
   const { t } = useLocale();
+  const [reported, setReported] = useState<Set<number>>(new Set());
   const score = answers.filter((a) => a.correct).length;
   const total = questions.length;
   const pct = total > 0 ? Math.round((score / total) * 100) : 0;
@@ -215,6 +219,24 @@ export default function Results({
                   <div className="text-[13px] text-ink leading-relaxed">
                     <MathText text={q.solution} />
                   </div>
+                </div>
+              )}
+
+              {onReport && (
+                <div className="ml-7 mt-3">
+                  {reported.has(qi) ? (
+                    <span className="text-[12px] text-ink-muted">{t.reportThanks}</span>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        onReport(q);
+                        setReported((prev) => new Set(prev).add(qi));
+                      }}
+                      className="inline-flex items-center gap-1.5 text-[12px] text-ink-muted transition-colors hover:text-ink-secondary"
+                    >
+                      <Flag size={12} /> {t.reportQuestion}
+                    </button>
+                  )}
                 </div>
               )}
             </div>

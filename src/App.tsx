@@ -37,6 +37,7 @@ import {
   listDue,
   recordMaterial,
   recordRoundResults,
+  reportQuestion,
   setLocalMaterialScore,
   type MissedQuestion,
   type RecentMaterial,
@@ -360,6 +361,12 @@ export default function App() {
     }
   };
 
+  // Flag a bad question: drop it from the bank/review pile so it won't return.
+  const handleReportQuestion = (q: QuizQuestion) => {
+    if (!materialId) return;
+    void reportQuestion(materialId, userName, q).then(() => setRefreshKey((k) => k + 1));
+  };
+
   // Where to land after a quiz: back to its course, else the courses home.
   const afterQuizView = (): View => (isReview ? 'review' : roundCourse ? 'course' : 'home');
 
@@ -601,6 +608,7 @@ export default function App() {
               setReaderFocusId(sectionId);
               setView('reader');
             }}
+            onReport={isReview ? undefined : handleReportQuestion}
             onFinish={handleFinish}
             onQuit={() => setView(afterQuizView())}
           />
@@ -614,6 +622,7 @@ export default function App() {
             roundSize={roundSize}
             isReview={isReview}
             onRound={(size) => runRound(size, material, materialId, title, pdfBase64, 'mixed', mode)}
+            onReport={isReview ? undefined : handleReportQuestion}
             onRetake={retake}
             onNewMaterial={() => {
               if (isReview) {

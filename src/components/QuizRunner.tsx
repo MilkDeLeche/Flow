@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Check, X, ArrowRight, BookOpen, ExternalLink } from 'lucide-react';
+import { Check, X, ArrowRight, BookOpen, ExternalLink, Flag } from 'lucide-react';
 import MathText from './MathText';
 import { findQuestionSource } from '../lib/chapter';
 import { useLocale } from '../lib/i18n';
@@ -11,6 +11,7 @@ interface QuizRunnerProps {
   mode: QuizMode;
   material?: string;
   onOpenSource?: (sectionId?: string) => void;
+  onReport?: (q: QuizQuestion) => void;
   onFinish: (answers: AnswerRecord[]) => void;
   onQuit: () => void;
 }
@@ -25,6 +26,7 @@ export default function QuizRunner({
   mode,
   material,
   onOpenSource,
+  onReport,
   onFinish,
   onQuit,
 }: QuizRunnerProps) {
@@ -33,6 +35,7 @@ export default function QuizRunner({
   const [chosen, setChosen] = useState<number | null>(null);
   const [textAnswer, setTextAnswer] = useState('');
   const [answers, setAnswers] = useState<AnswerRecord[]>([]);
+  const [reported, setReported] = useState<Set<number>>(new Set());
 
   const q = questions[index];
   const kind = q.kind ?? 'multiple_choice';
@@ -272,6 +275,24 @@ export default function QuizRunner({
           <ArrowRight size={16} />
         </button>
       </div>
+
+      {onReport && (
+        <div className="mt-6 text-center">
+          {reported.has(index) ? (
+            <span className="text-[12px] text-ink-muted">{t.reportThanks}</span>
+          ) : (
+            <button
+              onClick={() => {
+                onReport(q);
+                setReported((prev) => new Set(prev).add(index));
+              }}
+              className="inline-flex items-center gap-1.5 text-[12px] text-ink-muted transition-colors hover:text-ink-secondary"
+            >
+              <Flag size={12} /> {t.reportQuestion}
+            </button>
+          )}
+        </div>
+      )}
     </section>
   );
 }

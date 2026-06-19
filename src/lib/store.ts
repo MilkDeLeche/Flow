@@ -485,6 +485,49 @@ export async function countDue(
   return (await listDue(userName, materialId, 999)).length;
 }
 
+/**
+ * Flag a bad/incorrect question: drop it from the cached bank so it's never
+ * served again, and clear it from this user's review pile. Trust matters —
+ * one wrong AI question shouldn't keep coming back.
+ */
+export async function reportQuestion(
+  materialId: string,
+  userName: string,
+  q: QuizQuestion
+): Promise<void> {
+  if (supabase) {
+    await supabase
+      .from('quiz_bank')
+      .delete()
+      .eq('material_id', materialId)
+      .eq('question_text', qText(q));
+    await supabase
+      .from('missed_questions')
+      .delete()
+      .eq('material_id', materialId)
+      .eq('user_name', userName)
+      .eq('question_text', qText(q));
+    return;
+  }
+  const map = lsGet<Record<string, QuizQuestion[]>>(LS_BANK, {});
+  if (map[materialId]) {
+    map[materialId] = map[materialId].filter((x) => qText(x) !== qText(q));
+    lsSet(LS_BANK, map);
+  }
+  const list = lsGet<MissedQuestion[]>(LS_MISSED, []);
+  lsSet(
+    LS_MISSED,
+    list.filter(
+      (m) =>
+        !(
+          m.materialId === materialId &&
+          qText(m.question) === qText(q) &&
+          userKey(m) === userName
+        )
+    )
+  );
+}
+
 /** Grade a review drill: correct answers leave the pile; misses bump the count. */
 export async function gradeReviewResults(
   userName: string,
