@@ -15,7 +15,6 @@ import ChapterReader from './components/dashboard/ChapterReader';
 import Settings from './components/Settings';
 import { generateQuiz } from './lib/api';
 import { saveAttempt } from './lib/history';
-import { supabase } from './lib/supabase';
 import { loadKeyStatus } from './lib/byok';
 import { useAuth } from './lib/useAuth';
 import { useLocale } from './lib/i18n';
@@ -32,10 +31,10 @@ import { parseCourseFromInput } from './lib/parseCourse';
 import type { Course } from './lib/courses';
 import {
   addToBank,
-  countMissed,
+  countDue,
   gradeReviewResults,
   listBank,
-  listMissed,
+  listDue,
   recordMaterial,
   recordRoundResults,
   setLocalMaterialScore,
@@ -76,7 +75,7 @@ function shuffle<T>(arr: T[]): T[] {
 
 export default function App() {
   const { t } = useLocale();
-  const { session, loading: authLoading, authRequired } = useAuth();
+  const { session, loading: authLoading, authRequired, signOut } = useAuth();
 
   // Top-level screen: the Flow landing page (front door) vs. the quiz app.
   const [screen, setScreen] = useState<'landing' | 'app'>('landing');
@@ -112,6 +111,14 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [byokActive, setByokActive] = useState(false);
 
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      setView('home');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not sign out.');
+    }
+  };
   const userProfile = profileFromSession(session);
   const planTier = usePlanTier(session);
   const userName = authRequired ? userProfile.displayName : localName;
@@ -158,7 +165,7 @@ export default function App() {
   }, [reloadKeyStatus, session]);
 
   const refreshMissed = useCallback(() => {
-    countMissed(userName).then(setMissedCount);
+    countDue(userName).then(setMissedCount);
   }, [userName]);
 
   useEffect(() => {
@@ -345,7 +352,7 @@ export default function App() {
 
   const retake = async () => {
     if (isReview) {
-      const remaining = await listMissed(userName);
+      const remaining = await listDue(userName);
       if (remaining.length) startReview(remaining.slice(0, 30));
       else setView('review');
     } else {
@@ -467,7 +474,7 @@ export default function App() {
         {view === 'settings' && (
           <Settings
             onKeyChange={reloadKeyStatus}
-            onSignOut={() => supabase?.auth.signOut()}
+            onSignOut={handleSignOut}
             displayName={authRequired ? userProfile.displayName : undefined}
             email={authRequired ? userProfile.email : undefined}
             avatarUrl={authRequired ? userProfile.avatarUrl : undefined}

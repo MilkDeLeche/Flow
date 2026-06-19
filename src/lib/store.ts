@@ -22,8 +22,39 @@ export interface MissedQuestion {
   timesWrong: number;
   timesSeen: number;
   updatedAt: string;
+  /** When this question should next resurface (ISO). <= now means due. */
+  dueAt: string;
+  /** Current spacing in days (0 = brand new / just lapsed). */
+  intervalDays: number;
+  /** Consecutive correct reviews; drives the schedule below. */
+  streak: number;
   /** Only populated in localStorage mode (Supabase filters by column). */
   userName?: string;
+}
+
+// Graduated spacing (in days). A correct review advances one step; once the
+// last step is cleared the question is mastered and leaves the pile. A wrong
+// answer resets the streak and makes it due again immediately.
+const SR_INTERVALS = [1, 3, 7] as const;
+
+function addDaysIso(days: number): string {
+  return new Date(Date.now() + days * 86_400_000).toISOString();
+}
+
+/** Next schedule for a question after `streak` consecutive correct reviews. */
+function scheduleFor(streak: number): {
+  graduate: boolean;
+  intervalDays: number;
+  dueAt: string;
+} {
+  if (streak > SR_INTERVALS.length) return { graduate: true, intervalDays: 0, dueAt: nowIso() };
+  const intervalDays = SR_INTERVALS[streak - 1];
+  return { graduate: false, intervalDays, dueAt: addDaysIso(intervalDays) };
+}
+
+/** True when a missed question is due for review now (or has no schedule yet). */
+export function isDue(m: MissedQuestion): boolean {
+  return !m.dueAt || m.dueAt <= nowIso();
 }
 
 const LS_MATERIALS = 'flow_materials';
@@ -242,7 +273,7 @@ export async function recordRoundResults(args: {
     const q = questions[a.questionIndex];
     if (!q) continue;
     if (a.correct) {
-      await masterMissed(materialId, userName, q);
+      await advanceMissed(materialId, userName, q);
     } else {
       await bumpMissed(materialId, materialTitle, userName, q);
     }
@@ -264,11 +295,15 @@ async function bumpMissed(
       .eq('question_text', qText(q))
       .maybeSingle();
     if (data) {
+      // Lapse: reset the schedule so it's due again right away.
       await supabase
         .from('missed_questions')
         .update({
           times_wrong: data.times_wrong + 1,
           times_seen: data.times_seen + 1,
+          streak: 0,
+          interval_days: 0,
+          due_at: nowIso(),
           updated_at: nowIso(),
         })
         .eq('id', data.id);
@@ -281,6 +316,9 @@ async function bumpMissed(
         question: q,
         times_wrong: 1,
         times_seen: 1,
+        streak: 0,
+        interval_days: 0,
+        due_at: nowIso(),
       });
     }
     return;
@@ -295,6 +333,9 @@ async function bumpMissed(
   if (idx >= 0) {
     list[idx].timesWrong += 1;
     list[idx].timesSeen += 1;
+    list[idx].streak = 0;
+    list[idx].intervalDays = 0;
+    list[idx].dueAt = nowIso();
     list[idx].updatedAt = nowIso();
   } else {
     list.unshift({
@@ -304,6 +345,9 @@ async function bumpMissed(
       question: q,
       timesWrong: 1,
       timesSeen: 1,
+      streak: 0,
+      intervalDays: 0,
+      dueAt: nowIso(),
       updatedAt: nowIso(),
       userName,
     });
@@ -315,30 +359,59 @@ function userKey(m: MissedQuestion): string {
   return m.userName || 'Student';
 }
 
-async function masterMissed(
+// A correct answer advances the schedule one step. Only after the last spacing
+// step is cleared does the question graduate out of the pile. Questions that
+// were never missed are a no-op (nothing to advance).
+async function advanceMissed(
   materialId: string,
   userName: string,
   q: QuizQuestion
 ) {
   if (supabase) {
-    await supabase
+    const { data } = await supabase
       .from('missed_questions')
-      .delete()
+      .select('id,streak,times_seen')
       .eq('material_id', materialId)
       .eq('user_name', userName)
-      .eq('question_text', qText(q));
+      .eq('question_text', qText(q))
+      .maybeSingle();
+    if (!data) return;
+    const next = scheduleFor((data.streak ?? 0) + 1);
+    if (next.graduate) {
+      await supabase.from('missed_questions').delete().eq('id', data.id);
+      return;
+    }
+    await supabase
+      .from('missed_questions')
+      .update({
+        streak: (data.streak ?? 0) + 1,
+        interval_days: next.intervalDays,
+        due_at: next.dueAt,
+        times_seen: (data.times_seen ?? 0) + 1,
+        updated_at: nowIso(),
+      })
+      .eq('id', data.id);
     return;
   }
   const list = lsGet<MissedQuestion[]>(LS_MISSED, []);
-  const next = list.filter(
+  const idx = list.findIndex(
     (m) =>
-      !(
-        m.materialId === materialId &&
-        qText(m.question) === qText(q) &&
-        userKey(m) === userName
-      )
+      m.materialId === materialId &&
+      qText(m.question) === qText(q) &&
+      userKey(m) === userName
   );
-  lsSet(LS_MISSED, next);
+  if (idx < 0) return;
+  const next = scheduleFor((list[idx].streak ?? 0) + 1);
+  if (next.graduate) {
+    lsSet(LS_MISSED, list.filter((_, i) => i !== idx));
+    return;
+  }
+  list[idx].streak = (list[idx].streak ?? 0) + 1;
+  list[idx].intervalDays = next.intervalDays;
+  list[idx].dueAt = next.dueAt;
+  list[idx].timesSeen += 1;
+  list[idx].updatedAt = nowIso();
+  lsSet(LS_MISSED, list);
 }
 
 export async function listMissed(
@@ -364,12 +437,25 @@ export async function listMissed(
       timesWrong: r.times_wrong,
       timesSeen: r.times_seen,
       updatedAt: r.updated_at,
+      dueAt: r.due_at ?? r.updated_at,
+      intervalDays: r.interval_days ?? 0,
+      streak: r.streak ?? 0,
     }));
   }
-  const list = lsGet<MissedQuestion[]>(LS_MISSED, []).filter(
-    (m) => userKey(m) === userName && (!materialId || m.materialId === materialId)
-  );
+  const list = lsGet<MissedQuestion[]>(LS_MISSED, [])
+    .filter((m) => userKey(m) === userName && (!materialId || m.materialId === materialId))
+    .map(normalizeMissed);
   return list.sort((a, b) => b.timesWrong - a.timesWrong).slice(0, limit);
+}
+
+/** Backfill schedule fields for rows saved before spaced repetition existed. */
+function normalizeMissed(m: MissedQuestion): MissedQuestion {
+  return {
+    ...m,
+    dueAt: m.dueAt ?? m.updatedAt ?? nowIso(),
+    intervalDays: m.intervalDays ?? 0,
+    streak: m.streak ?? 0,
+  };
 }
 
 export async function countMissed(
@@ -377,6 +463,26 @@ export async function countMissed(
   materialId?: string
 ): Promise<number> {
   return (await listMissed(userName, materialId, 999)).length;
+}
+
+/** Missed questions that are due for review now, soonest-due first. */
+export async function listDue(
+  userName: string,
+  materialId?: string,
+  limit = 200
+): Promise<MissedQuestion[]> {
+  const all = await listMissed(userName, materialId, 999);
+  return all
+    .filter(isDue)
+    .sort((a, b) => (a.dueAt < b.dueAt ? -1 : 1))
+    .slice(0, limit);
+}
+
+export async function countDue(
+  userName: string,
+  materialId?: string
+): Promise<number> {
+  return (await listDue(userName, materialId, 999)).length;
 }
 
 /** Grade a review drill: correct answers leave the pile; misses bump the count. */
@@ -388,7 +494,7 @@ export async function gradeReviewResults(
   for (const a of answers) {
     const m = missed[a.questionIndex];
     if (!m) continue;
-    if (a.correct) await masterMissed(m.materialId, userName, m.question);
+    if (a.correct) await advanceMissed(m.materialId, userName, m.question);
     else await bumpMissed(m.materialId, m.materialTitle, userName, m.question);
   }
 }
