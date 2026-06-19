@@ -1,11 +1,22 @@
 /**
  * Flow Studio included allowances + top-up pack (display + server must stay in sync).
+ * Prices must match Stripe Dashboard (Student one-time, Studio + Focus Pack monthly).
  * Economics target: average Studio user costs ~$3–5/mo in API; heavy user hits cap ~$8–10
- * before needing a $10 top-up (~$4–5 your cost, ~$5–6 margin).
+ * before needing a Focus Pack top-up.
  */
 
-export const STUDIO_MONTHLY_USD = 20;
-export const FOCUS_PACK_USD = 10;
+/** Match Stripe one-time Student price */
+export const STUDENT_TIER_USD = 9.99;
+/** Match Stripe Flow Studio monthly price */
+export const STUDIO_MONTHLY_USD = 19.99;
+/** Match Stripe Flow Plus (managed) monthly price */
+export const MANAGED_MONTHLY_USD = 12.99;
+/** Match Stripe Focus Pack monthly price */
+export const FOCUS_PACK_USD = 9.99;
+
+export function formatUsd(amount: number): string {
+  return `$${amount.toFixed(2)}`;
+}
 
 /** Included with Flow Studio each billing month */
 export const STUDIO_INCLUDED = {
@@ -13,7 +24,7 @@ export const STUDIO_INCLUDED = {
   tutorMessages: 30,
 } as const;
 
-/** One-time $10 Focus Pack add-on (stacks until used; does not expire mid-month) */
+/** Focus Pack add-on (stacks until used; does not expire mid-month) */
 export const FOCUS_PACK_ADDS = {
   voiceMinutes: 25,
   tutorMessages: 20,

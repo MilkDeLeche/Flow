@@ -138,6 +138,18 @@ export const copy = {
       'Hard cap ~1–2 chapters/day on shared AI',
       'No BYOK — upgrade to Student for your own key',
     ],
+    managedTier: 'Flow Plus',
+    managedTierSub: 'per month',
+    managedTierDetail:
+      'We run the AI — no API key, no setup. Upload and study with generous monthly limits.',
+    managedTierBullets: [
+      'No API key needed — we handle the AI',
+      'Generous daily quiz limits',
+      'Up to 50-question rounds & exams',
+      'Cancel anytime',
+    ],
+    checkoutManaged: 'Subscribe — $12.99/mo',
+    planActiveManaged: 'Plus active',
     studentTier: 'Student',
     studentTierSub: 'one-time unlock',
     studentTierDetail:
@@ -565,6 +577,18 @@ export const copy = {
       'Tope ~1–2 capítulos/día en IA compartida',
       'Sin BYOK — Student para tu propia key',
     ],
+    managedTier: 'Flow Plus',
+    managedTierSub: 'al mes',
+    managedTierDetail:
+      'Nosotros ponemos la IA — sin API key ni configuración. Sube y estudia con límites generosos.',
+    managedTierBullets: [
+      'Sin API key — nosotros ponemos la IA',
+      'Límites diarios generosos',
+      'Rondas y exámenes de hasta 50 preguntas',
+      'Cancela cuando quieras',
+    ],
+    checkoutManaged: 'Suscribirse — $12.99/mes',
+    planActiveManaged: 'Plus activo',
     studentTier: 'Student',
     studentTierSub: 'desbloqueo único',
     studentTierDetail:

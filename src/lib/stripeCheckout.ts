@@ -1,6 +1,6 @@
 import { supabase } from './supabase';
 
-export type CheckoutProduct = 'student' | 'studio' | 'focus_pack';
+export type CheckoutProduct = 'student' | 'studio' | 'focus_pack' | 'managed';
 
 export const PENDING_CHECKOUT_KEY = 'flow_pending_checkout';
 
@@ -11,7 +11,8 @@ export function savePendingCheckout(product: CheckoutProduct) {
 export function takePendingCheckout(): CheckoutProduct | null {
   const raw = sessionStorage.getItem(PENDING_CHECKOUT_KEY);
   sessionStorage.removeItem(PENDING_CHECKOUT_KEY);
-  if (raw === 'student' || raw === 'studio' || raw === 'focus_pack') return raw;
+  if (raw === 'student' || raw === 'studio' || raw === 'focus_pack' || raw === 'managed')
+    return raw;
   return null;
 }
 

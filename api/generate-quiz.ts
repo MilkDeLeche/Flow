@@ -18,7 +18,7 @@ import {
 import { checkAndRecordUsage } from './_usage.js';
 import { getStoredKey } from './_keys.js';
 import { byokUpgradeMessage, getUserPlanRow, tierAllowsByok } from './_planAdmin.js';
-import { FREE_LIMITS, PAID_BYOK_LIMITS } from './_limitsConfig.js';
+import { FREE_LIMITS, MANAGED_LIMITS, PAID_BYOK_LIMITS } from './_limitsConfig.js';
 
 const MAX_MATERIAL_CHARS = 200_000;
 const MAX_PDF_BYTES = 4_500_000; // Vercel request-body ceiling
@@ -174,6 +174,30 @@ export default async function handler(
           if (rate.retryAfter) res.setHeader('retry-after', String(rate.retryAfter));
           return send(res, rate.status ?? 429, {
             error: rate.message ?? 'Too many requests. Please try again later.',
+          });
+        }
+      }
+    } else if (planTier === 'managed') {
+      // Managed "Plus" plan: shared key, generous caps the operator absorbs.
+      if (!serverKey) {
+        console.error('No server ANTHROPIC_API_KEY for managed plan.');
+        return send(res, 500, { error: 'Server is not configured.' });
+      }
+      provider = 'anthropic';
+      apiKey = serverKey;
+      model = process.env.MANAGED_MODEL || FREE_MODEL;
+      material = material.slice(0, MANAGED_LIMITS.maxMaterialChars);
+      genCount = Math.min(count, MANAGED_LIMITS.maxQuestions);
+
+      if (sb && userId) {
+        const rate = await checkAndRecordUsage(userId, sb, 'managed', {
+          hour: MANAGED_LIMITS.hour,
+          day: MANAGED_LIMITS.day,
+        });
+        if (!rate.ok) {
+          if (rate.retryAfter) res.setHeader('retry-after', String(rate.retryAfter));
+          return send(res, rate.status ?? 429, {
+            error: rate.message ?? 'Daily limit reached. Try again later.',
           });
         }
       }

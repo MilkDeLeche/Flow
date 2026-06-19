@@ -1,8 +1,17 @@
 import { createClient } from '@supabase/supabase-js';
 import type { ServerSupabase } from './_auth.js';
 import type { CheckoutProduct } from './_stripeConfig.js';
+import { STUDENT_TIER_USD, formatUsd } from './_creditsConfig.js';
 
-export type PlanTier = 'free' | 'student' | 'studio';
+export type PlanTier = 'free' | 'student' | 'studio' | 'managed';
+
+export function tierAllowsByok(planTier: string | null | undefined): boolean {
+  return planTier === 'student' || planTier === 'studio';
+}
+
+export function byokUpgradeMessage(): string {
+  return `Upgrade to Student (${formatUsd(STUDENT_TIER_USD)}) to connect your own API key and upload files.`;
+}
 
 function adminClient(cfg: ServerSupabase) {
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;

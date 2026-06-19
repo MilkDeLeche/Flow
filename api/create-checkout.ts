@@ -47,6 +47,9 @@ function checkoutBlocked(
   if (product === 'focus_pack' && planTier !== 'studio') {
     return 'Focus Pack requires an active Flow Studio plan.';
   }
+  if (product === 'managed' && planTier === 'managed') {
+    return 'You already have the Plus plan.';
+  }
   return null;
 }
 
@@ -92,28 +95,39 @@ export default async function handler(
   const origin = typeof originHeader === 'string' ? originHeader : undefined;
   const base = appBaseUrl(origin);
 
+  const checkoutBase = {
+    client_reference_id: user.id,
+    metadata: {
+      user_id: user.id,
+      product,
+    },
+    ...(planRow?.stripe_customer_id
+      ? { customer: planRow.stripe_customer_id }
+      : { customer_email: user.email ?? undefined }),
+    success_url: `${base}/?checkout=success`,
+    cancel_url: `${base}/?checkout=cancel`,
+  };
+
   try {
-    const session = await stripe.checkout.sessions.create({
-      mode: 'subscription',
-      line_items: [{ price: priceId, quantity: 1 }],
-      client_reference_id: user.id,
-      metadata: {
-        user_id: user.id,
-        product,
-      },
-      subscription_data: {
-        metadata: {
-          user_id: user.id,
-          product,
-        },
-      },
-      ...(planRow?.stripe_customer_id
-        ? { customer: planRow.stripe_customer_id }
-        : { customer_email: user.email ?? undefined }),
-      success_url: `${base}/?checkout=success`,
-      cancel_url: `${base}/?checkout=cancel`,
-      allow_promotion_codes: product === 'studio',
-    });
+    const session =
+      product === 'student'
+        ? await stripe.checkout.sessions.create({
+            mode: 'payment',
+            line_items: [{ price: priceId, quantity: 1 }],
+            ...checkoutBase,
+          })
+        : await stripe.checkout.sessions.create({
+            mode: 'subscription',
+            line_items: [{ price: priceId, quantity: 1 }],
+            ...checkoutBase,
+            subscription_data: {
+              metadata: {
+                user_id: user.id,
+                product,
+              },
+            },
+            allow_promotion_codes: product === 'studio',
+          });
 
     if (!session.url) return send(res, 500, { error: 'Stripe did not return a checkout URL.' });
     return send(res, 200, { url: session.url });

@@ -1,7 +1,7 @@
 import { useRef, type RefObject } from 'react';
 import BackgroundVideo from '../BackgroundVideo';
 import { useLocale } from '../../lib/i18n';
-import { FOCUS_PACK_USD } from '../../lib/creditsConfig';
+import { FOCUS_PACK_USD, MANAGED_MONTHLY_USD, STUDIO_MONTHLY_USD, STUDENT_TIER_USD, formatUsd } from '../../lib/creditsConfig';
 import CheckoutButton from '../CheckoutButton';
 import { savePendingCheckout, type CheckoutProduct } from '../../lib/stripeCheckout';
 import type { PlanTier } from '../../lib/tiers';
@@ -84,6 +84,7 @@ export default function PricingSection({
 }: PricingSectionProps) {
   const { t } = useLocale();
   const freeTierVideo = useHoverVideo();
+  const managedTierVideo = useHoverVideo();
   const studentTierVideo = useHoverVideo();
   const studioTierVideo = useHoverVideo();
   const focusPackVideo = useHoverVideo();
@@ -122,7 +123,7 @@ export default function PricingSection({
           {t.pricingIntro}
         </p>
 
-        <div className="grid gap-4 lg:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <article
             className={`group relative overflow-hidden ${cardGlass}`}
             onMouseEnter={freeTierVideo.play}
@@ -145,6 +146,39 @@ export default function PricingSection({
           </article>
 
           <article
+            className={`group relative overflow-hidden ${cardGlassFeatured}`}
+            onMouseEnter={managedTierVideo.play}
+            onMouseLeave={managedTierVideo.pause}
+          >
+            <HoverVideoLayer
+              videoRef={managedTierVideo.videoRef}
+              src={STUDENT_TIER_HOVER_VIDEO}
+            />
+            <div className="relative z-10">
+              <p className={tierEyebrow}>{t.managedTier}</p>
+              <p className={`mb-1 text-[40px] ${tierPrice}`}>{formatUsd(MANAGED_MONTHLY_USD)}</p>
+              <p className="mb-5 text-[13px] text-white/50">{t.managedTierSub}</p>
+              <p className={`mb-5 ${tierBody}`}>{t.managedTierDetail}</p>
+              <ul className={`mb-6 ${tierBullets}`}>
+                {t.managedTierBullets.map((item) => (
+                  <li key={item} className="flex gap-2">
+                    <span className="text-white/90">•</span>
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+              <CheckoutButton
+                product="managed"
+                label={planTier === 'managed' ? t.planActiveManaged : t.checkoutManaged}
+                isLoggedIn={isLoggedIn}
+                onNeedLogin={handleNeedLogin}
+                disabled={planTier !== 'free'}
+                className={planTier !== 'free' ? checkoutDisabled : checkoutActive}
+              />
+            </div>
+          </article>
+
+          <article
             className={`group relative overflow-hidden ${cardGlass}`}
             onMouseEnter={studentTierVideo.play}
             onMouseLeave={studentTierVideo.pause}
@@ -155,7 +189,7 @@ export default function PricingSection({
             />
             <div className="relative z-10">
               <p className={tierEyebrow}>{t.studentTier}</p>
-              <p className={`mb-1 text-[40px] ${tierPrice}`}>$5</p>
+              <p className={`mb-1 text-[40px] ${tierPrice}`}>{formatUsd(STUDENT_TIER_USD)}</p>
               <p className="mb-5 text-[13px] text-white/50">{t.studentTierSub}</p>
               <p className={`mb-5 ${tierBody}`}>{t.studentTierDetail}</p>
               <ul className={`mb-6 ${tierBullets}`}>
@@ -188,7 +222,7 @@ export default function PricingSection({
             />
             <div className="relative z-10">
               <p className={tierEyebrow}>{t.studioTier}</p>
-              <p className={`mb-1 text-[40px] ${tierPrice}`}>$20</p>
+              <p className={`mb-1 text-[40px] ${tierPrice}`}>{formatUsd(STUDIO_MONTHLY_USD)}</p>
               <p className="mb-5 text-[13px] text-white/50">{t.studioTierSub}</p>
               <p className={`mb-5 ${tierBody}`}>{t.studioTierDetail}</p>
               <ul className={`mb-6 ${tierBullets}`}>
@@ -232,7 +266,7 @@ export default function PricingSection({
           </div>
           <div className="relative z-10 mt-4 w-full shrink-0 md:mt-0 md:max-w-[220px]">
             <p className={`mb-3 text-right text-[36px] md:text-left ${tierPrice}`}>
-              ${FOCUS_PACK_USD}
+              {formatUsd(FOCUS_PACK_USD)}
             </p>
             <CheckoutButton
               product="focus_pack"

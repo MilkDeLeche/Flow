@@ -35,7 +35,7 @@ async function readRawBody(req: IncomingMessage): Promise<Buffer> {
 
 function subscriptionProduct(
   subscription: Stripe.Subscription
-): 'student' | 'studio' | 'focus_pack' | null {
+): 'student' | 'studio' | 'focus_pack' | 'managed' | null {
   const raw = subscription.metadata?.product;
   return isCheckoutProduct(raw) ? raw : null;
 }
@@ -79,6 +79,7 @@ async function handleCheckoutCompleted(
   if (product === 'student') {
     await applyPlanFromStripe(cfg, userId, {
       planTier: 'student',
+      lifetimeStudent: true,
       stripeCustomerId: customerId,
       stripeSubscriptionId: subscriptionId,
       subscriptionProduct: 'student',
@@ -92,6 +93,16 @@ async function handleCheckoutCompleted(
       stripeCustomerId: customerId,
       stripeSubscriptionId: subscriptionId,
       subscriptionProduct: 'studio',
+    });
+    return;
+  }
+
+  if (product === 'managed') {
+    await applyPlanFromStripe(cfg, userId, {
+      planTier: 'managed',
+      stripeCustomerId: customerId,
+      stripeSubscriptionId: subscriptionId,
+      subscriptionProduct: 'managed',
     });
   }
 }
@@ -138,8 +149,10 @@ async function handleSubscriptionChange(
   }
 
   if (active) {
+    const planTier =
+      product === 'studio' ? 'studio' : product === 'managed' ? 'managed' : 'student';
     await applyPlanFromStripe(cfg, userId, {
-      planTier: product === 'studio' ? 'studio' : 'student',
+      planTier,
       stripeCustomerId: customerId ?? null,
       stripeSubscriptionId: subscriptionId,
       subscriptionProduct: product,

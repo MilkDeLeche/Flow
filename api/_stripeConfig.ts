@@ -1,11 +1,12 @@
 import Stripe from 'stripe';
 
-export type CheckoutProduct = 'student' | 'studio' | 'focus_pack';
+export type CheckoutProduct = 'student' | 'studio' | 'focus_pack' | 'managed';
 
 const PRODUCT_PRICES: Record<CheckoutProduct, string | undefined> = {
   student: process.env.STRIPE_PRICE_STUDENT,
   studio: process.env.STRIPE_PRICE_STUDIO,
   focus_pack: process.env.STRIPE_PRICE_FOCUS_PACK,
+  managed: process.env.STRIPE_PRICE_MANAGED,
 };
 
 export function getStripe(): Stripe | null {
@@ -29,5 +30,10 @@ export function priceIdFor(product: CheckoutProduct): string | null {
 }
 
 export function isCheckoutProduct(value: unknown): value is CheckoutProduct {
-  return value === 'student' || value === 'studio' || value === 'focus_pack';
+  return (
+    value === 'student' ||
+    value === 'studio' ||
+    value === 'focus_pack' ||
+    value === 'managed'
+  );
 }
