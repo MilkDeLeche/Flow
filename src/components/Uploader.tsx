@@ -237,7 +237,7 @@ export default function Uploader({
         )}
 
         {error && (
-          <p className="text-[14px] text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">
+          <p className="text-[14px] text-red-600 bg-red-50 border border-red-200 dark:text-red-300 dark:bg-red-950/30 dark:border-red-900/50 rounded-lg px-4 py-3">
             {error}
           </p>
         )}

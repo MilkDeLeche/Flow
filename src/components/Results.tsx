@@ -29,7 +29,7 @@ export default function Results({
   const { t } = useLocale();
   const score = answers.filter((a) => a.correct).length;
   const total = questions.length;
-  const pct = Math.round((score / total) * 100);
+  const pct = total > 0 ? Math.round((score / total) * 100) : 0;
 
   const currentIdx = ROUND_SIZES.indexOf(roundSize);
   const nextSize: RoundSize | null =
@@ -136,6 +136,8 @@ export default function Results({
         {questions.map((q, qi) => {
           const a = byQuestion.get(qi);
           const chosen = a?.chosenIndex ?? null;
+          const isFillBlank = (q.kind ?? 'multiple_choice') === 'fill_blank';
+          const correctText = q.blankAnswer || q.explanations[0] || '';
           return (
             <div
               key={qi}
@@ -144,19 +146,33 @@ export default function Results({
               <div className="flex items-start gap-2 mb-3">
                 <span
                   className={`mt-0.5 w-5 h-5 shrink-0 rounded-full flex items-center justify-center ${
-                    a?.correct ? 'bg-green-100' : 'bg-red-100'
+                    a?.correct ? 'bg-green-100 dark:bg-green-950/40' : 'bg-red-100 dark:bg-red-950/40'
                   }`}
                 >
                   {a?.correct ? (
-                    <Check size={13} className="text-green-600" />
+                    <Check size={13} className="text-green-600 dark:text-green-400" />
                   ) : (
-                    <X size={13} className="text-red-500" />
+                    <X size={13} className="text-red-500 dark:text-red-400" />
                   )}
                 </span>
                 <h3 className="text-[16px] font-medium text-ink leading-snug">
                   {qi + 1}. <MathText text={q.question} />
                 </h3>
               </div>
+              {isFillBlank ? (
+                <div className="space-y-1.5 ml-7 text-[14px]">
+                  <p className={a?.correct ? 'text-green-700 dark:text-green-300' : 'text-red-600 dark:text-red-300'}>
+                    {a?.textAnswer?.trim()
+                      ? <>{t.yourAnswer}: <span className="font-medium">{a.textAnswer}</span>{a?.correct ? ' ✓' : ' ✗'}</>
+                      : t.noAnswerGiven}
+                  </p>
+                  {!a?.correct && correctText && (
+                    <p className="text-green-700 dark:text-green-300">
+                      {t.correctAnswer}: <span className="font-medium"><MathText text={correctText} /></span>
+                    </p>
+                  )}
+                </div>
+              ) : (
               <div className="space-y-1.5 ml-7">
                 {q.options.map((opt, oi) => {
                   const isCorrect = oi === q.correctIndex;
@@ -166,9 +182,9 @@ export default function Results({
                       <span
                         className={`${
                           isCorrect
-                            ? 'text-green-700 font-medium'
+                            ? 'text-green-700 dark:text-green-300 font-medium'
                             : isChosen
-                            ? 'text-red-600'
+                            ? 'text-red-600 dark:text-red-300'
                             : 'text-ink-secondary'
                         }`}
                       >
@@ -176,10 +192,10 @@ export default function Results({
                         {isCorrect && ' ✓'}
                         {isChosen && !isCorrect && ` ✗ (${t.yourAnswer})`}
                       </span>
-                      {(isCorrect || isChosen) && (
+                      {(isCorrect || isChosen) && q.explanations[oi] && (
                         <p
                           className={`mt-0.5 text-[13px] leading-relaxed ${
-                            isCorrect ? 'text-green-700/90' : 'text-red-500'
+                            isCorrect ? 'text-green-700/90 dark:text-green-300/90' : 'text-red-500 dark:text-red-300'
                           }`}
                         >
                           <MathText text={q.explanations[oi]} />
@@ -189,6 +205,7 @@ export default function Results({
                   );
                 })}
               </div>
+              )}
 
               {q.solution && q.solution.trim() && (
                 <div className="ml-7 mt-3 rounded-xl border border-line bg-surface-muted px-4 py-3">

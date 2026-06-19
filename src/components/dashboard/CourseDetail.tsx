@@ -285,13 +285,13 @@ export default function CourseDetail({
         </p>
       </section>
 
-      <section className="mb-8 rounded-xl border border-red-200 bg-red-50/60 p-4">
+      <section className="mb-8 rounded-xl border border-red-200 bg-red-50/60 dark:border-red-900/50 dark:bg-red-950/20 p-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-[14px] font-medium text-red-950">
+            <h2 className="text-[14px] font-medium text-red-950 dark:text-red-300">
               {t.deleteCourse}
             </h2>
-            <p className="mt-1 max-w-[680px] text-[12px] leading-relaxed text-red-800/80">
+            <p className="mt-1 max-w-[680px] text-[12px] leading-relaxed text-red-800/80 dark:text-red-300/70">
               {t.deleteCourseHint}
             </p>
           </div>

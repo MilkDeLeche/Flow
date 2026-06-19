@@ -543,7 +543,7 @@ export default function App() {
           <div className="max-w-[640px] mx-auto px-5 pt-24 text-center">
             {error ? (
               <>
-                <p className="text-[16px] text-red-600 bg-red-50 border border-red-200 rounded-xl px-5 py-4 mb-6">
+                <p className="text-[16px] text-red-600 bg-red-50 border border-red-200 dark:text-red-300 dark:bg-red-950/30 dark:border-red-900/50 rounded-xl px-5 py-4 mb-6">
                   {error}
                 </p>
                 <div className="flex items-center justify-center gap-3">

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Check, X, ArrowRight, BookOpen, ExternalLink } from 'lucide-react';
 import MathText from './MathText';
 import { findQuestionSource } from '../lib/chapter';
@@ -76,6 +76,33 @@ export default function QuizRunner({
     setChosen(null);
     setTextAnswer('');
   };
+
+  // Keyboard shortcuts: number keys pick an option, Enter advances. Lets
+  // students rip through a round without reaching for the mouse each time.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement | null)?.tagName;
+      const typing = tag === 'INPUT' || tag === 'TEXTAREA';
+
+      if (e.key === 'Enter') {
+        if (canContinue) {
+          e.preventDefault();
+          next();
+        }
+        return;
+      }
+      if (typing || kind === 'fill_blank' || revealed) return;
+
+      const n = Number(e.key);
+      if (Number.isInteger(n) && n >= 1 && n <= q.options.length) {
+        e.preventDefault();
+        choose(n - 1);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [index, chosen, textAnswer, kind, revealed, canContinue]);
 
   const correctSoFar = answers.filter((a) => a.correct).length;
   const progress = ((index + (canContinue ? 1 : 0)) / questions.length) * 100;

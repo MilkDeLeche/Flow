@@ -118,7 +118,7 @@ export default function ApiKeyPanel({ onChange, byokAllowed = true }: ApiKeyPane
             </p>
           </div>
           {active && (
-            <span className="inline-flex items-center gap-1.5 text-[12px] text-green-700 bg-green-50 border border-green-200 rounded-full px-2.5 py-1 shrink-0">
+            <span className="inline-flex items-center gap-1.5 text-[12px] text-green-700 bg-green-50 border border-green-200 dark:text-green-300 dark:bg-green-950/30 dark:border-green-900/50 rounded-full px-2.5 py-1 shrink-0">
               <Check size={13} /> {t.active}
             </span>
           )}
