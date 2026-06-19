@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import { Upload, FileText, Loader2 } from 'lucide-react';
 import TextFade from './TextFade';
-import { extractTextFromFile, readPdf } from '../lib/extract';
+import { extractTextFromFile, isImageFile, readImage, readPdf } from '../lib/extract';
 import { ROUND_SIZES, type QuizMode, type RoundSize } from '../lib/types';
 import { supabaseEnabled } from '../lib/supabase';
 import { useLocale } from '../lib/i18n';
@@ -20,6 +20,8 @@ interface UploaderProps {
     roundSize: RoundSize;
     mode: QuizMode;
     pdfBase64?: string;
+    imageBase64?: string;
+    imageMediaType?: string;
   }) => void;
 }
 
@@ -38,6 +40,8 @@ export default function Uploader({
   const [extracting, setExtracting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pdfBase64, setPdfBase64] = useState<string | undefined>();
+  const [imageBase64, setImageBase64] = useState<string | undefined>();
+  const [imageMediaType, setImageMediaType] = useState<string | undefined>();
   const [visionNote, setVisionNote] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -46,10 +50,27 @@ export default function Uploader({
     setError(null);
     setVisionNote(null);
     setPdfBase64(undefined);
+    setImageBase64(undefined);
+    setImageMediaType(undefined);
     setExtracting(true);
     try {
       const ext = file.name.split('.').pop()?.toLowerCase() || 'file';
-      if (ext === 'pdf') {
+      if (isImageFile(file)) {
+        const fileMb = file.size / 1_000_000;
+        if (fileMb > VISION_MAX_MB) {
+          setError(
+            `That image is too large (limit ${VISION_MAX_MB}MB). Try a smaller or cropped photo.`
+          );
+        } else {
+          const { base64, mediaType } = await readImage(file);
+          setImageBase64(base64);
+          setImageMediaType(mediaType);
+          setMaterial(`Photo: ${file.name}`);
+          setVisionNote(
+            'I’ll read this photo — typed or handwritten text and diagrams — to build your quiz.'
+          );
+        }
+      } else if (ext === 'pdf') {
         const { text, base64, numPages } = await readPdf(file);
         const fileMb = file.size / 1_000_000;
         // Thin text relative to page count => scanned / figure-based PDF.
@@ -85,7 +106,7 @@ export default function Uploader({
     }
   };
 
-  const canStart = material.trim().length >= 40 || !!pdfBase64;
+  const canStart = material.trim().length >= 40 || !!pdfBase64 || !!imageBase64;
   const isChapter = intent === 'chapter';
 
   return (
@@ -133,6 +154,8 @@ export default function Uploader({
               setMaterial(e.target.value);
               setSourceType('paste');
               setPdfBase64(undefined);
+              setImageBase64(undefined);
+              setImageMediaType(undefined);
               setVisionNote(null);
             }}
             rows={9}
@@ -164,7 +187,7 @@ export default function Uploader({
             <input
               ref={fileRef}
               type="file"
-              accept=".pdf,.pptx,.txt,.md,text/plain"
+              accept=".pdf,.pptx,.txt,.md,text/plain,image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp"
               className="hidden"
               onChange={(e) => handleFile(e.target.files?.[0])}
             />
@@ -252,6 +275,8 @@ export default function Uploader({
                 roundSize,
                 mode,
                 pdfBase64,
+                imageBase64,
+                imageMediaType,
               })
             }
             disabled={!canStart}

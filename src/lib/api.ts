@@ -6,6 +6,8 @@ export interface GenerateQuizOptions {
   focus?: QuizFocus;
   isTest?: boolean;
   definitionsBlock?: string;
+  imageBase64?: string;
+  imageMediaType?: string;
 }
 
 /**
@@ -40,6 +42,8 @@ export async function generateQuiz(
       count,
       avoid,
       pdfBase64,
+      imageBase64: options?.imageBase64,
+      imageMediaType: options?.imageMediaType,
       provider: byok?.provider,
       apiKey: byok?.key,
       model: byok?.model,

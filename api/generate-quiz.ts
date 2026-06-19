@@ -17,15 +17,13 @@ import {
 } from './_auth.js';
 import { checkAndRecordUsage } from './_usage.js';
 import { getStoredKey } from './_keys.js';
+import { byokUpgradeMessage, getUserPlanRow, tierAllowsByok } from './_planAdmin.js';
+import { FREE_LIMITS, PAID_BYOK_LIMITS } from './_limitsConfig.js';
 
 const MAX_MATERIAL_CHARS = 200_000;
 const MAX_PDF_BYTES = 4_500_000; // Vercel request-body ceiling
-
-// Free tier: strict + cheapest. BYOK bypasses these (user's own key/cost).
-const FREE_HOUR = Number(process.env.FREE_LIMIT_HOUR || 1);
-const FREE_DAY = Number(process.env.FREE_LIMIT_DAY || 2);
-// Cap questions per free-tier call so the shared key can't run up big bills.
-const FREE_MAX_COUNT = Number(process.env.FREE_MAX_COUNT || 10);
+const MAX_IMAGE_BYTES = 4_500_000;
+const ALLOWED_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/gif'];
 
 function send(res: ServerResponse, status: number, body: unknown) {
   res.statusCode = status;
@@ -72,16 +70,28 @@ export default async function handler(
   }
 
   let usedByok = false;
+  let planTier = 'free';
   try {
     const body = await readJsonBody(req);
-    const material = String(body.material || '').slice(0, MAX_MATERIAL_CHARS);
+    let material = String(body.material || '').slice(0, MAX_MATERIAL_CHARS);
     const count = Number(body.count);
     const avoid = Array.isArray(body.avoid) ? body.avoid.map(String) : undefined;
     let pdfBase64 =
       typeof body.pdfBase64 === 'string' ? body.pdfBase64 : undefined;
+    let imageBase64 =
+      typeof body.imageBase64 === 'string' ? body.imageBase64 : undefined;
+    const imageMediaType =
+      typeof body.imageMediaType === 'string' && ALLOWED_IMAGE_TYPES.includes(body.imageMediaType)
+        ? body.imageMediaType
+        : 'image/png';
 
-    // BYOK: user's own provider key (never stored/logged). If present + valid,
-    // they run on their own key/budget and skip the free-tier cap.
+    if (sb && userId) {
+      const planRow = await getUserPlanRow(userId, sb);
+      planTier = String(planRow?.plan_tier ?? 'free');
+    }
+    const byokAllowed = tierAllowsByok(planTier);
+
+    // BYOK: user's own provider key (never stored/logged). Requires Student or Studio.
     const rawKey = typeof body.apiKey === 'string' ? body.apiKey.trim() : '';
     const reqProvider: Provider = isProvider(body.provider)
       ? body.provider
@@ -90,19 +100,21 @@ export default async function handler(
       return send(res, 400, {
         error: `That doesn’t look like a valid ${reqProvider} API key.`,
       });
+    if (rawKey && !byokAllowed)
+      return send(res, 403, { error: byokUpgradeMessage() });
+
     let byok: { provider: Provider; key: string; model?: string } | null = rawKey
       ? { provider: reqProvider, key: rawKey }
       : null;
 
     // No inline key? Use the user's own key stored (encrypted) on their account.
-    // Decrypted only here, server-side — it never reaches the browser.
-    if (!byok && sb && userId) {
+    if (!byok && byokAllowed && sb && userId) {
       const stored = await getStoredKey(userId, sb);
       if (stored) byok = stored;
     }
     usedByok = !!byok;
 
-    if (!pdfBase64 && material.trim().length < 40)
+    if (!pdfBase64 && !imageBase64 && material.trim().length < 40)
       return send(res, 400, { error: 'Material is too short to make a quiz from.' });
 
     if (!Number.isInteger(count) || count < 1 || count > 50)
@@ -110,9 +122,11 @@ export default async function handler(
 
     // PDF / diagram vision is Anthropic-only and BYOK-only.
     if (pdfBase64) {
-      if (!byok)
+      if (!byokAllowed || !byok)
         return send(res, 403, {
-          error: 'PDF & diagram parsing needs your own API key. Free is paste-text only.',
+          error: byokAllowed
+            ? 'PDF & diagram parsing needs your own API key saved in Settings.'
+            : byokUpgradeMessage(),
         });
       if (byok.provider !== 'anthropic') pdfBase64 = undefined; // others: text only
     }
@@ -123,6 +137,22 @@ export default async function handler(
       const head = Buffer.from(pdfBase64.slice(0, 16), 'base64').toString('latin1');
       if (!head.startsWith('%PDF'))
         return send(res, 400, { error: 'That file is not a valid PDF.' });
+    }
+
+    // Photo / image vision is Anthropic-only and BYOK-only (same as PDF).
+    if (imageBase64) {
+      if (!byokAllowed || !byok)
+        return send(res, 403, {
+          error: byokAllowed
+            ? 'Reading photos needs your own API key saved in Settings.'
+            : byokUpgradeMessage(),
+        });
+      if (byok.provider !== 'anthropic') imageBase64 = undefined; // others: text only
+    }
+    if (imageBase64) {
+      const approxBytes = Math.floor(imageBase64.length * 0.75);
+      if (approxBytes > MAX_IMAGE_BYTES)
+        return send(res, 400, { error: 'Image is too large (max ~4MB).' });
     }
 
     // Resolve provider / key / model / question count.
@@ -137,6 +167,16 @@ export default async function handler(
       const wanted =
         byok.model || (typeof body.model === 'string' ? body.model : '');
       model = resolveModel(provider, wanted);
+
+      if (sb && userId) {
+        const rate = await checkAndRecordUsage(userId, sb, 'byok', PAID_BYOK_LIMITS);
+        if (!rate.ok) {
+          if (rate.retryAfter) res.setHeader('retry-after', String(rate.retryAfter));
+          return send(res, rate.status ?? 429, {
+            error: rate.message ?? 'Too many requests. Please try again later.',
+          });
+        }
+      }
     } else {
       // Free tier: cheapest model on the shared key, strictly rate-limited.
       if (!serverKey) {
@@ -146,20 +186,20 @@ export default async function handler(
       provider = 'anthropic';
       apiKey = serverKey;
       model = FREE_MODEL;
+      material = material.slice(0, FREE_LIMITS.maxMaterialChars);
       // Tighten cost on the shared key: clamp question count for the free tier.
-      genCount = Math.min(count, FREE_MAX_COUNT);
+      genCount = Math.min(count, FREE_LIMITS.maxQuestions);
 
       if (sb && userId) {
         const rate = await checkAndRecordUsage(userId, sb, 'text', {
-          hour: FREE_HOUR,
-          day: FREE_DAY,
+          hour: FREE_LIMITS.hour,
+          day: FREE_LIMITS.day,
         });
         if (!rate.ok) {
           if (rate.retryAfter) res.setHeader('retry-after', String(rate.retryAfter));
           return send(res, rate.status ?? 429, {
             error:
-              (rate.message ?? 'Limit reached.') +
-              ' Add your own free key (Anthropic, OpenAI, or Gemini) for unlimited use.',
+              (rate.message ?? 'Limit reached.') + ' ' + byokUpgradeMessage(),
           });
         }
       }
@@ -170,6 +210,8 @@ export default async function handler(
       count: genCount,
       avoid,
       pdfBase64,
+      imageBase64,
+      imageMediaType,
       provider,
       apiKey,
       model,

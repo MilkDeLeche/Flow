@@ -188,7 +188,9 @@ export default function App() {
     mTitle: string,
     pdf?: string,
     focus: QuizFocus = 'mixed',
-    quizMode: QuizMode = mode
+    quizMode: QuizMode = mode,
+    imageBase64?: string,
+    imageMediaType?: string
   ) => {
     setRoundSize(size);
     setIsReview(false);
@@ -199,11 +201,13 @@ export default function App() {
       focus,
       isTest,
       definitionsBlock: definitionsPromptBlock(extractDefinitions(mat)),
+      imageBase64,
+      imageMediaType,
     };
     try {
       const bank = await listBank(mId);
       let pool = bank;
-      if (pdf && bank.length === 0) {
+      if ((pdf || imageBase64) && bank.length === 0) {
         const fresh = await generateQuiz(mat, 50, [], pdf, genOptions);
         await addToBank(mId, mTitle, fresh);
         pool = fresh;
@@ -256,6 +260,8 @@ export default function App() {
     roundSize: RoundSize;
     mode: QuizMode;
     pdfBase64?: string;
+    imageBase64?: string;
+    imageMediaType?: string;
   }) => {
     const studyMaterial = prepareStudyMaterial(args.material) || args.material;
     const finalTitle = await resolveMaterialTitle(
@@ -293,7 +299,17 @@ export default function App() {
       return;
     }
 
-    await runRound(args.roundSize, studyMaterial, id, finalTitle, args.pdfBase64, 'mixed', args.mode);
+    await runRound(
+      args.roundSize,
+      studyMaterial,
+      id,
+      finalTitle,
+      args.pdfBase64,
+      'mixed',
+      args.mode,
+      args.imageBase64,
+      args.imageMediaType
+    );
   };
 
   const handleResume = async (

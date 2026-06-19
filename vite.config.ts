@@ -48,6 +48,10 @@ function devApiPlugin(apiKey: string): Plugin {
             : undefined;
           let pdfBase64 =
             typeof body.pdfBase64 === 'string' ? body.pdfBase64 : undefined;
+          let imageBase64 =
+            typeof body.imageBase64 === 'string' ? body.imageBase64 : undefined;
+          const imageMediaType =
+            typeof body.imageMediaType === 'string' ? body.imageMediaType : 'image/png';
 
           const rawKey = typeof body.apiKey === 'string' ? body.apiKey.trim() : '';
           const reqProvider = isProvider(body.provider) ? body.provider : 'anthropic';
@@ -62,6 +66,7 @@ function devApiPlugin(apiKey: string): Plugin {
           const byok = rawKey ? { provider: reqProvider, key: rawKey } : null;
 
           if (pdfBase64 && (!byok || byok.provider !== 'anthropic')) pdfBase64 = undefined;
+          if (imageBase64 && (!byok || byok.provider !== 'anthropic')) imageBase64 = undefined;
 
           let provider: 'anthropic' | 'openai' | 'gemini';
           let effectiveKey: string;
@@ -86,7 +91,7 @@ function devApiPlugin(apiKey: string): Plugin {
             );
             return;
           }
-          if (!pdfBase64 && material.trim().length < 40) {
+          if (!pdfBase64 && !imageBase64 && material.trim().length < 40) {
             res.statusCode = 400;
             res.setHeader('content-type', 'application/json');
             res.end(JSON.stringify({ error: 'Material is too short.' }));
@@ -98,6 +103,8 @@ function devApiPlugin(apiKey: string): Plugin {
             count,
             avoid,
             pdfBase64,
+            imageBase64,
+            imageMediaType,
             provider,
             apiKey: effectiveKey,
             model,

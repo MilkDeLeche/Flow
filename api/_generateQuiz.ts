@@ -24,6 +24,8 @@ export interface GenerateQuizInput {
   count: number;
   avoid?: string[];
   pdfBase64?: string; // Anthropic vision only
+  imageBase64?: string; // photo of notes/textbook — Anthropic vision only
+  imageMediaType?: string;
   provider: Provider;
   apiKey: string;
   model: string;
@@ -203,15 +205,33 @@ async function viaAnthropic(input: GenerateQuizInput): Promise<QuizQuestion[]> {
   const client = new Anthropic({ apiKey: input.apiKey });
   const isHaiku = input.model.includes('haiku');
 
-  const content: Anthropic.ContentBlockParam[] = input.pdfBase64
-    ? [
-        {
-          type: 'document',
-          source: { type: 'base64', media_type: 'application/pdf', data: input.pdfBase64 },
+  let content: Anthropic.ContentBlockParam[];
+  if (input.pdfBase64) {
+    content = [
+      {
+        type: 'document',
+        source: { type: 'base64', media_type: 'application/pdf', data: input.pdfBase64 },
+      },
+      { type: 'text', text: `Use the attached document, including diagrams/figures.\n\n${userText(input, false)}` },
+    ];
+  } else if (input.imageBase64) {
+    content = [
+      {
+        type: 'image',
+        source: {
+          type: 'base64',
+          media_type: (input.imageMediaType || 'image/png') as 'image/png',
+          data: input.imageBase64,
         },
-        { type: 'text', text: `Use the attached document, including diagrams/figures.\n\n${userText(input, false)}` },
-      ]
-    : [{ type: 'text', text: userText(input, false) }];
+      },
+      {
+        type: 'text',
+        text: `The attached image is a photo of study material (textbook page, handwritten or typed notes, or slides). Read ALL visible text carefully, including handwriting, and use any diagrams.\n\n${userText(input, false)}`,
+      },
+    ];
+  } else {
+    content = [{ type: 'text', text: userText(input, false) }];
+  }
 
   const stream = client.messages.stream({
     model: input.model,

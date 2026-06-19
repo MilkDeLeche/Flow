@@ -21,6 +21,33 @@ function fileToBase64(file: File): Promise<string> {
   });
 }
 
+export interface ImageRead {
+  base64: string;
+  mediaType: string;
+}
+
+const IMAGE_EXT_TYPES: Record<string, string> = {
+  png: 'image/png',
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  webp: 'image/webp',
+  gif: 'image/gif',
+};
+
+/** True for photo/screenshot files we can read with vision. */
+export function isImageFile(file: File): boolean {
+  return file.type.startsWith('image/') || /\.(png|jpe?g|webp|gif)$/i.test(file.name);
+}
+
+export async function readImage(file: File): Promise<ImageRead> {
+  const base64 = await fileToBase64(file);
+  const ext = file.name.split('.').pop()?.toLowerCase() || '';
+  const mediaType = file.type.startsWith('image/')
+    ? file.type
+    : IMAGE_EXT_TYPES[ext] || 'image/png';
+  return { base64, mediaType };
+}
+
 export async function readPdf(file: File): Promise<PdfRead> {
   const base64 = await fileToBase64(file);
   const pdfjsLib = await import('pdfjs-dist');
