@@ -68,7 +68,9 @@ export default function Dashboard({ onOpenCourse, refreshKey }: Props) {
     return d;
   });
 
-  const reloadPlans = () => setPlans(listStudyPlans());
+  const reloadPlans = () => {
+    listStudyPlans().then(setPlans);
+  };
 
   useEffect(() => {
     let on = true;
@@ -101,7 +103,7 @@ export default function Dashboard({ onOpenCourse, refreshKey }: Props) {
     );
   }, [nextPlans]);
 
-  const addPlan = () => {
+  const addPlan = async () => {
     if (!selectedCourse) {
       setError(t.plannerChooseCourse);
       return;
@@ -110,7 +112,7 @@ export default function Dashboard({ onOpenCourse, refreshKey }: Props) {
       setError(t.plannerFutureDate);
       return;
     }
-    createStudyPlan({
+    await createStudyPlan({
       courseId: selectedCourse.id,
       courseName: selectedCourse.name,
       title,
@@ -122,14 +124,23 @@ export default function Dashboard({ onOpenCourse, refreshKey }: Props) {
     reloadPlans();
   };
 
+  // Optimistic: flip locally for instant feedback, then persist.
   const toggle = (planId: string, sessionKey: string) => {
-    toggleStudySession(planId, sessionKey);
-    reloadPlans();
+    setPlans((prev) =>
+      prev.map((plan) => {
+        if (plan.id !== planId) return plan;
+        const done = new Set(plan.completedSessions);
+        if (done.has(sessionKey)) done.delete(sessionKey);
+        else done.add(sessionKey);
+        return { ...plan, completedSessions: Array.from(done) };
+      })
+    );
+    void toggleStudySession(planId, sessionKey);
   };
 
   const remove = (planId: string) => {
-    deleteStudyPlan(planId);
-    reloadPlans();
+    setPlans((prev) => prev.filter((plan) => plan.id !== planId));
+    void deleteStudyPlan(planId);
   };
 
   const openPlanCourse = (plan: StudyPlan) => {

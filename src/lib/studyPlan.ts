@@ -1,3 +1,5 @@
+import { supabase } from './supabase';
+
 export const PLAN_PASTEL_COLORS = [
   {
     chip: 'bg-[#ede4ff] text-[#5c3d99] dark:bg-purple-950/55 dark:text-purple-200',
@@ -100,45 +102,119 @@ export function todayString(): string {
   return toLocalDate(todayLocal());
 }
 
-export function listStudyPlans(): StudyPlan[] {
+interface PlanRow {
+  id: string;
+  course_id: string | null;
+  course_name: string;
+  title: string;
+  test_date: string;
+  quizzes_per_week: number;
+  completed_sessions: string[] | null;
+  color_index: number | null;
+  created_at: string;
+}
+
+function fromRow(r: PlanRow): StudyPlan {
+  return {
+    id: r.id,
+    courseId: r.course_id ?? '',
+    courseName: r.course_name,
+    title: r.title,
+    testDate: r.test_date,
+    quizzesPerWeek: r.quizzes_per_week,
+    completedSessions: r.completed_sessions ?? [],
+    createdAt: r.created_at,
+    colorIndex: r.color_index ?? undefined,
+  };
+}
+
+function lsListPlans(): StudyPlan[] {
   return lsGet<StudyPlan[]>(LS_PLANS, []).sort(
     (a, b) => parseLocalDate(a.testDate).getTime() - parseLocalDate(b.testDate).getTime()
   );
 }
 
-export function createStudyPlan(input: {
+export async function listStudyPlans(): Promise<StudyPlan[]> {
+  if (supabase) {
+    const { data, error } = await supabase
+      .from('study_plans')
+      .select('*')
+      .order('test_date', { ascending: true });
+    if (!error && data) return (data as PlanRow[]).map(fromRow);
+    return [];
+  }
+  return lsListPlans();
+}
+
+export async function createStudyPlan(input: {
   courseId: string;
   courseName: string;
   title?: string;
   testDate: string;
   quizzesPerWeek: number;
-}): StudyPlan {
+}): Promise<StudyPlan> {
+  const title = input.title?.trim() || `${input.courseName} test`;
+  if (supabase) {
+    const { data, error } = await supabase
+      .from('study_plans')
+      .insert({
+        course_id: input.courseId,
+        course_name: input.courseName,
+        title,
+        test_date: input.testDate,
+        quizzes_per_week: input.quizzesPerWeek,
+        completed_sessions: [],
+      })
+      .select('*')
+      .single();
+    if (!error && data) return fromRow(data as PlanRow);
+    // fall through to local on error
+  }
   const plan: StudyPlan = {
     id: uid(),
     courseId: input.courseId,
     courseName: input.courseName,
-    title: input.title?.trim() || `${input.courseName} test`,
+    title,
     testDate: input.testDate,
     quizzesPerWeek: input.quizzesPerWeek,
     completedSessions: [],
     createdAt: new Date().toISOString(),
-    colorIndex: listStudyPlans().length % PLAN_PASTEL_COLORS.length,
+    colorIndex: lsListPlans().length % PLAN_PASTEL_COLORS.length,
   };
-  const plans = listStudyPlans();
+  const plans = lsListPlans();
   plans.push(plan);
   lsSet(LS_PLANS, plans);
   return plan;
 }
 
-export function deleteStudyPlan(id: string) {
+export async function deleteStudyPlan(id: string) {
+  if (supabase) {
+    await supabase.from('study_plans').delete().eq('id', id);
+    return;
+  }
   lsSet(
     LS_PLANS,
-    listStudyPlans().filter((plan) => plan.id !== id)
+    lsListPlans().filter((plan) => plan.id !== id)
   );
 }
 
-export function toggleStudySession(planId: string, sessionKey: string) {
-  const plans = listStudyPlans().map((plan) => {
+export async function toggleStudySession(planId: string, sessionKey: string) {
+  if (supabase) {
+    const { data } = await supabase
+      .from('study_plans')
+      .select('completed_sessions')
+      .eq('id', planId)
+      .maybeSingle();
+    const done = new Set<string>((data?.completed_sessions as string[]) ?? []);
+    if (done.has(sessionKey)) done.delete(sessionKey);
+    else done.add(sessionKey);
+    await supabase
+      .from('study_plans')
+      .update({ completed_sessions: Array.from(done) })
+      .eq('id', planId);
+    return;
+  }
+  const plans = lsListPlans().map((plan) => {
     if (plan.id !== planId) return plan;
     const done = new Set(plan.completedSessions);
     if (done.has(sessionKey)) done.delete(sessionKey);
