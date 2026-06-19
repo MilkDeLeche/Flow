@@ -45,6 +45,53 @@
   }
 }
 
+/* shadcn-style tokens used by the glass auth screen, mapped to Flow's palette.
+   Defined as full color values so `oklch(from var(--foreground) …)` works. */
+:root {
+  --background: #fefffc;
+  --foreground: #2c2c2c;
+  --card: #ffffff;
+  --card-foreground: #2c2c2c;
+  --primary: #7c5cff;
+  --primary-foreground: #ffffff;
+  --secondary: #6366f1;
+  --muted-foreground: #646464;
+  --border: #dfe4df;
+  --destructive: #f43f5e;
+  /* Decorative gradient stops behind the auth card. */
+  --color-primary: #8b5cf6;
+  --color-secondary: #6366f1;
+  --color-accent: #a78bfa;
+  --color-destructive: #fb7185;
+  --color-chart-1: #6366f1;
+  --color-chart-3: #22d3ee;
+  --color-chart-4: #ec4899;
+  --color-chart-5: #8b5cf6;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0f110f;
+    --foreground: #f2f4f0;
+    --card: #1a1d1a;
+    --card-foreground: #f2f4f0;
+    --primary: #a78bfa;
+    --primary-foreground: #101210;
+    --secondary: #818cf8;
+    --muted-foreground: #c8cec8;
+    --border: #2a2f2a;
+    --destructive: #fb7185;
+    --color-primary: #a78bfa;
+    --color-secondary: #818cf8;
+    --color-accent: #c4b5fd;
+    --color-destructive: #fb7185;
+    --color-chart-1: #818cf8;
+    --color-chart-3: #22d3ee;
+    --color-chart-4: #f472b6;
+    --color-chart-5: #a78bfa;
+  }
+}
+
 html {
   scroll-behavior: smooth;
   color-scheme: light dark;

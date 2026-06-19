@@ -1,5 +1,6 @@
 import { defineConfig, loadEnv, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
+import { fileURLToPath, URL } from 'node:url';
 
 // Dev-only middleware so `npm run dev` serves POST /api/generate-quiz locally
 // (mirrors the Vercel serverless function). Reads ANTHROPIC_API_KEY from .env.
@@ -179,5 +180,10 @@ export default defineConfig(({ mode }) => {
   process.env.ANTHROPIC_MODEL ||= env.ANTHROPIC_MODEL || '';
   return {
     plugins: [react(), devApiPlugin(env.ANTHROPIC_API_KEY || ''), devParseCoursePlugin()],
+    resolve: {
+      alias: {
+        '@': fileURLToPath(new URL('./src', import.meta.url)),
+      },
+    },
   };
 });

@@ -6,7 +6,7 @@ import QuizRunner from './components/QuizRunner';
 import Results from './components/Results';
 import History from './components/History';
 import Review from './components/Review';
-import Login from './components/Login';
+import { AuthComponent } from './components/ui/sign-up';
 import Landing from './components/landing/Landing';
 import CoursesHome from './components/dashboard/CoursesHome';
 import Dashboard from './components/dashboard/Dashboard';
@@ -419,7 +419,7 @@ export default function App() {
     );
   }
   if (authRequired && !session)
-    return <Login onBack={() => setScreen('landing')} />;
+    return <AuthComponent onBack={() => setScreen('landing')} />;
 
   const topView: 'home' | 'history' | 'review' | 'dashboard' | 'settings' =
     view === 'history' || view === 'review' || view === 'dashboard' || view === 'settings'
