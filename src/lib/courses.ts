@@ -271,6 +271,40 @@ export async function updateCourse(
   );
 }
 
+export interface SharedCourse {
+  name: string;
+  description: string;
+  theme: string;
+  chapters: { id: string; title: string; content: string; sourceType: string }[];
+}
+
+/** Toggle a public read-only share link. Returns the new share_id (or null when off / offline). */
+export async function setCourseShare(id: string, enabled: boolean): Promise<string | null> {
+  const shareId = enabled ? (uid() + uid()).replace(/[^a-z0-9]/gi, '').slice(0, 22) : null;
+  if (supabase) {
+    const { error } = await supabase.from('courses').update({ share_id: shareId }).eq('id', id);
+    if (error) return null;
+    return shareId;
+  }
+  return null; // sharing requires Supabase (a public link to fetch from)
+}
+
+/** Current share_id for a course, or null if not shared / unavailable. */
+export async function getCourseShareId(id: string): Promise<string | null> {
+  if (!supabase) return null;
+  const { data, error } = await supabase.from('courses').select('share_id').eq('id', id).maybeSingle();
+  if (error || !data) return null;
+  return (data.share_id as string | null) ?? null;
+}
+
+/** Fetch a shared course by its public share_id (works without auth). */
+export async function getSharedCourse(shareId: string): Promise<SharedCourse | null> {
+  if (!supabase) return null;
+  const { data, error } = await supabase.rpc('get_shared_course', { p_share_id: shareId });
+  if (error || !data) return null;
+  return data as SharedCourse;
+}
+
 export async function deleteCourse(id: string): Promise<void> {
   if (supabase) {
     const { data: mats } = await supabase

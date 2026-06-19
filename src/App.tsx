@@ -8,6 +8,7 @@ import History from './components/History';
 import Review from './components/Review';
 import { AuthComponent } from './components/ui/sign-up';
 import Landing from './components/landing/Landing';
+import ShareView from './components/ShareView';
 import CoursesHome from './components/dashboard/CoursesHome';
 import Dashboard from './components/dashboard/Dashboard';
 import CourseDetail from './components/dashboard/CourseDetail';
@@ -451,6 +452,24 @@ export default function App() {
     setRefreshKey((k) => k + 1);
     setView('reader');
   };
+
+  // ---- Public shared course (read-only, no account needed) ----
+  const sharedId = new URLSearchParams(window.location.search).get('shared');
+  if (sharedId) {
+    return (
+      <ShareView
+        shareId={sharedId}
+        onEnter={() => {
+          window.history.replaceState(
+            null,
+            '',
+            `${window.location.pathname}${window.location.hash}`
+          );
+          setScreen('landing');
+        }}
+      />
+    );
+  }
 
   // ---- Landing page (public front door) ----
   if (screen === 'landing') {

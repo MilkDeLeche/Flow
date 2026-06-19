@@ -9,6 +9,7 @@ import {
   NotebookTabs,
   Plus,
   Play,
+  Share2,
   Target,
   Trash2,
 } from 'lucide-react';
@@ -16,7 +17,8 @@ import { themeGradient } from '../../lib/themes';
 import { listMaterialsByCourse, type RecentMaterial } from '../../lib/store';
 import { listAttemptsForMaterials, type Attempt } from '../../lib/history';
 import type { Course } from '../../lib/courses';
-import { deleteCourse, updateCourse } from '../../lib/courses';
+import { deleteCourse, getCourseShareId, setCourseShare, updateCourse } from '../../lib/courses';
+import { supabaseEnabled } from '../../lib/supabase';
 import { useLocale } from '../../lib/i18n';
 
 interface Props {
@@ -64,6 +66,9 @@ export default function CourseDetail({
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [shareId, setShareId] = useState<string | null>(null);
+  const [shareBusy, setShareBusy] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     let on = true;
@@ -83,6 +88,24 @@ export default function CourseDetail({
     setYear(course.year || '');
     setFinishedAt(course.finishedAt || '');
   }, [course.id, course.semester, course.year, course.finishedAt]);
+
+  useEffect(() => {
+    if (supabaseEnabled) getCourseShareId(course.id).then(setShareId);
+  }, [course.id]);
+
+  const shareUrl = shareId ? `${window.location.origin}/?shared=${shareId}` : '';
+  const toggleShare = async () => {
+    setShareBusy(true);
+    const next = await setCourseShare(course.id, !shareId);
+    setShareId(next);
+    setShareBusy(false);
+  };
+  const copyLink = () => {
+    if (!shareUrl) return;
+    navigator.clipboard?.writeText(shareUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  };
 
   const quizzes = attempts.filter((a) => a.mode !== 'exam');
   const tests = attempts.filter((a) => a.mode === 'exam');
@@ -284,6 +307,42 @@ export default function CourseDetail({
             : 'Mark the class finished when the semester is over.'}
         </p>
       </section>
+
+      {supabaseEnabled && (
+        <section className="mb-8 rounded-xl border border-line bg-surface-card p-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="inline-flex items-center gap-2 text-[14px] font-medium text-ink">
+                <Share2 size={15} /> {t.shareCourse}
+              </h2>
+              <p className="mt-1 max-w-[680px] text-[12px] leading-relaxed text-ink-secondary">
+                {t.shareCourseHint}
+              </p>
+            </div>
+            <button
+              onClick={toggleShare}
+              disabled={shareBusy}
+              className="btn-outline shrink-0 gap-2 px-4 py-2 text-[13px] disabled:opacity-50"
+            >
+              {shareBusy ? <Loader2 size={14} className="animate-spin" /> : <Share2 size={14} />}
+              {shareId ? t.shareOff : t.shareOn}
+            </button>
+          </div>
+          {shareId && (
+            <div className="mt-3 flex items-center gap-2">
+              <input
+                readOnly
+                value={shareUrl}
+                onFocus={(e) => e.currentTarget.select()}
+                className="input-field h-9 flex-1 px-3 text-[12px]"
+              />
+              <button onClick={copyLink} className="btn-primary h-9 shrink-0 px-3 text-[12px]">
+                {copied ? t.copied : t.copyLink}
+              </button>
+            </div>
+          )}
+        </section>
+      )}
 
       <section className="mb-8 rounded-xl border border-red-200 bg-red-50/60 dark:border-red-900/50 dark:bg-red-950/20 p-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
