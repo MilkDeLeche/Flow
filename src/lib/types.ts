@@ -10,6 +10,8 @@ export interface QuizQuestion {
   kind?: QuestionKind;
   /** Canonical answer for fill-in-the-blank (exam/test only). */
   blankAnswer?: string;
+  /** Short topic/subtopic label for mastery breakdowns ('' if none). */
+  topic?: string;
 }
 
 export const ROUND_SIZES = [10, 20, 30, 40, 50] as const;

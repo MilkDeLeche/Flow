@@ -46,6 +46,22 @@ export default function Results({
   const verdict =
     pct >= 90 ? t.examReady : pct >= 70 ? t.almostThere : t.keepDrilling;
 
+  // Per-topic mastery (only when the generator tagged questions with topics).
+  const topicMap = new Map<string, { correct: number; total: number }>();
+  questions.forEach((q, qi) => {
+    const tp = (q.topic || '').trim();
+    if (!tp) return;
+    const a = byQuestion.get(qi);
+    const cur = topicMap.get(tp) || { correct: 0, total: 0 };
+    cur.total += 1;
+    if (a?.correct) cur.correct += 1;
+    topicMap.set(tp, cur);
+  });
+  const topics = [...topicMap.entries()]
+    .map(([name, s]) => ({ name, ...s, pct: Math.round((s.correct / s.total) * 100) }))
+    .sort((a, b) => a.pct - b.pct);
+  const weakest = topics.find((tp) => tp.pct < 100) ?? null;
+
   return (
     <section className="max-w-[760px] mx-auto px-5 md:px-8 pt-10 pb-16">
       <TextFade direction="up" staggerChildren={0.1}>
@@ -130,6 +146,40 @@ export default function Results({
         </div>
       </div>
         </>
+      )}
+
+      {/* Topic mastery */}
+      {topics.length >= 2 && (
+        <div className="mb-12">
+          <h2 className="font-mondwest text-ink text-[24px] md:text-[28px] mb-1">
+            {t.masteryByTopic}
+          </h2>
+          {weakest && (
+            <p className="text-[13px] text-ink-secondary mb-4">
+              {t.weakestTopic}: <span className="font-medium text-ink">{weakest.name}</span>
+            </p>
+          )}
+          <div className="space-y-3">
+            {topics.map((tp) => (
+              <div key={tp.name}>
+                <div className="mb-1 flex items-center justify-between text-[13px]">
+                  <span className="text-ink">{tp.name}</span>
+                  <span className="text-ink-secondary">
+                    {tp.correct}/{tp.total} · {tp.pct}%
+                  </span>
+                </div>
+                <div className="h-2 overflow-hidden rounded-full bg-surface-muted">
+                  <div
+                    className={`h-full rounded-full transition-all ${
+                      tp.pct >= 80 ? 'bg-green-500' : tp.pct >= 50 ? 'bg-amber-400' : 'bg-red-400'
+                    }`}
+                    style={{ width: `${tp.pct}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       )}
 
       {/* Review */}

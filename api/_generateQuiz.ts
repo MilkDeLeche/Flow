@@ -15,6 +15,7 @@ export interface QuizQuestion {
   solution?: string;
   kind?: 'multiple_choice' | 'true_false' | 'fill_blank';
   blankAnswer?: string;
+  topic?: string;
 }
 
 export type QuizFocus = 'mixed' | 'definitions' | 'comprehension';
@@ -52,8 +53,9 @@ const SCHEMA = {
           solution: { type: 'string' },
           kind: { type: 'string' },
           blankAnswer: { type: 'string' },
+          topic: { type: 'string' },
         },
-        required: ['question', 'options', 'correctIndex', 'explanations', 'solution', 'kind', 'blankAnswer'],
+        required: ['question', 'options', 'correctIndex', 'explanations', 'solution', 'kind', 'blankAnswer', 'topic'],
       },
     },
   },
@@ -96,13 +98,14 @@ Rules:
 - "solution": for quantitative/math questions, a step-by-step worked solution (formula then steps). Use LaTeX: $...$ inline and $$...$$ display. For purely conceptual questions, use "".
 - "kind": "multiple_choice" | "true_false" | "fill_blank".
 - "blankAnswer": required string for fill_blank; empty string "" otherwise.
+- "topic": a short 1-3 word topic/section label for the question, taken from the material's own structure or headings (e.g., "Photosynthesis", "Calvin cycle"). Reuse the SAME label across related questions so mastery can be grouped; never leave it empty.
 - Cover the breadth of the material; some overlap across questions is fine for exam readiness.
 - Ignore footnotes, endnotes, bibliographies, citation lists, copyright text, page headers/footers, and source metadata unless the main body explicitly teaches that content.
 - Base everything strictly on the material; do not invent unsupported facts.${input.definitionsBlock ?? ''}`;
 }
 
 const SHAPE = `Return ONLY valid JSON (no markdown, no prose) of the form:
-{"questions":[{"question":string,"options":[string,...],"correctIndex":0-3,"explanations":[string,...],"solution":string,"kind":"multiple_choice"|"true_false"|"fill_blank","blankAnswer":string}]}`;
+{"questions":[{"question":string,"options":[string,...],"correctIndex":0-3,"explanations":[string,...],"solution":string,"kind":"multiple_choice"|"true_false"|"fill_blank","blankAnswer":string,"topic":string}]}`;
 
 function cleanQuestions(raw: unknown): QuizQuestion[] {
   const parsed = raw as { questions?: QuizQuestion[] };
@@ -113,6 +116,7 @@ function cleanQuestions(raw: unknown): QuizQuestion[] {
         q.kind === 'true_false' || q.kind === 'fill_blank' || q.kind === 'multiple_choice'
           ? q.kind
           : 'multiple_choice';
+      const topic = typeof q.topic === 'string' ? q.topic.trim().slice(0, 40) : '';
 
       if (kind === 'fill_blank') {
         const blankAnswer =
@@ -128,6 +132,7 @@ function cleanQuestions(raw: unknown): QuizQuestion[] {
           solution: typeof q.solution === 'string' ? q.solution : '',
           kind,
           blankAnswer,
+          topic,
         } satisfies QuizQuestion;
       }
 
@@ -149,6 +154,7 @@ function cleanQuestions(raw: unknown): QuizQuestion[] {
           solution: typeof q.solution === 'string' ? q.solution : '',
           kind,
           blankAnswer: '',
+          topic,
         } satisfies QuizQuestion;
       }
 
@@ -169,6 +175,7 @@ function cleanQuestions(raw: unknown): QuizQuestion[] {
         kind: 'multiple_choice' as const,
         solution: typeof q.solution === 'string' ? q.solution : '',
         blankAnswer: '',
+        topic,
       } satisfies QuizQuestion;
     })
     .filter(Boolean) as QuizQuestion[];
